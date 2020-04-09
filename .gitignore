@@ -1,6 +1,91 @@
-*.swp
+# Compiled source #
+###################
+Debug
+Release
+*.so
+*.dylib
+*.dll
+
+# Packages #
+############
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# OS generated files #
+######################
+.DS_Store
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# Project files #
+#################
+.classpath
+.externalToolBuilders
+.idea
+.vscode
+.project
+.cproject
+.ropeproject
+.settings
+build
+dist
+nbproject
+atlassian-ide-plugin.xml
+build.xml
+nb-configuration.xml
+*.iml
+*.ipr
+*.iws
+*.sublime-project
+*.sublime-workspace
+
+# CMakeFiles 
+#################
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+# Prerequisites
+#################
+*.d
+*.gch
+*.pch
+
+# Compiled Object/Static files
+#################
+*.slo
+*.lo
 *.o
-.ycm_*
-build/
-bii/
-bin/
+*.obj
+*.lai
+*.la
+*.a
+*.lib
+
+# Fortran module files
+#################
+*.mod
+*.smod
+
+# Executables
+#################
+*.exe
+*.out
+*.app
+
+# core dump
+#################
+core.*
