@@ -1,11 +1,6 @@
 #include <iostream>
 #include "gtest/gtest.h"
-#include "toml/toml_base.h"
-#include "toml/toml_value.h"
-#include "toml/toml_array.h"
-#include "toml/toml_table.h"
-#include "toml/toml_node_view.h"
-#include "toml/toml_parser.h"
+#include "toml/toml.h"
 
 namespace
 {
