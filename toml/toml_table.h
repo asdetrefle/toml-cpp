@@ -1,6 +1,7 @@
 #pragma once
 
-#include "toml_array.h"
+#include "toml_base.h"
+#include "toml_node.h"
 
 namespace toml
 {
@@ -8,347 +9,167 @@ TOML_NAMESPACE_BEGIN
 /**
  * Represents a TOML keytable.
  */
-class table : public node
+class table final : public node
 {
-public:
-    friend class table_array;
+    struct make_shared_enabler
+    {
+    };
     friend std::shared_ptr<table> make_table();
 
-    std::shared_ptr<base> clone() const override;
+public:
+    using map = std::map<std::string, std::shared_ptr<node>, std::less<>>;
 
-    /**
-     * tables can be iterated over.
-     */
-    using iterator = string_to_base_map::iterator;
+    using key_type = std::string;
+    using value_type = std::shared_ptr<node>;
+    using size_type = size_t;
 
-    /**
-     * tables can be iterated over. Const version.
-     */
-    using const_iterator = string_to_base_map::const_iterator;
+    using iterator = map::iterator;
+    using const_iterator = map::const_iterator;
 
-    iterator begin()
+    table(const make_shared_enabler &) noexcept
+        : node(base_type::Table) {}
+
+    std::shared_ptr<node> clone() const override
+    {
+        auto result = make_table();
+        for (const auto &pr : map_)
+            result->emplace(pr.first, pr.second->clone());
+        return result;
+    }
+
+    iterator begin() noexcept
     {
         return map_.begin();
     }
 
-    const_iterator begin() const
+    const_iterator begin() const noexcept
     {
         return map_.begin();
     }
 
-    iterator end()
+    const_iterator cbegin() const noexcept
+    {
+        return map_.cbegin();
+    }
+
+    iterator end() noexcept
     {
         return map_.end();
     }
 
-    const_iterator end() const
+    const_iterator end() const noexcept
     {
         return map_.end();
     }
 
-    bool is_table() const override
+    const_iterator cend() const noexcept
     {
-        return true;
+        return map_.cend();
     }
 
-    bool empty() const
+    bool empty() const noexcept
     {
         return map_.empty();
     }
 
-    /**
-     * Determines if this key table contains the given key.
-     */
-    bool contains(const std::string &key) const
+    size_t size() const noexcept
+    {
+        return map_.size();
+    }
+
+    bool contains(std::string_view key) const
     {
         return map_.find(key) != map_.end();
     }
 
-    /**
-     * Determines if this key table contains the given key. Will
-     * resolve "qualified keys". Qualified keys are the full access
-     * path separated with dots like "grandparent.parent.child".
-     */
-    bool contains_qualified(const std::string &key) const
+    map &get() noexcept
     {
-        return resolve_qualified(key);
+        return map_;
     }
 
-    /**
-     * Obtains the base for a given key.
-     * @throw std::out_of_range if the key does not exist
-     */
-    std::shared_ptr<base> get(const std::string &key) const
+    const map &get() const noexcept
     {
-        return map_.at(key);
+        return map_;
     }
 
-    /**
-     * Obtains the base for a given key. Will resolve "qualified
-     * keys". Qualified keys are the full access path separated with
-     * dots like "grandparent.parent.child".
-     *
-     * @throw std::out_of_range if the key does not exist
-     */
-    std::shared_ptr<base> get_qualified(const std::string &key) const
+    iterator find(std::string_view key)
     {
-        std::shared_ptr<base> p;
-        resolve_qualified(key, &p);
-        return p;
+        return map_.find(key);
     }
 
-    /**
-     * Obtains a table for a given key, if possible.
-     */
-    std::shared_ptr<table> get_table(const std::string &key) const
+    const_iterator find(std::string_view key) const
     {
-        if (contains(key) && get(key)->is_table())
-            return std::static_pointer_cast<table>(get(key));
-        return nullptr;
+        return map_.find(key);
     }
 
-    /**
-     * Obtains a table for a given key, if possible. Will resolve
-     * "qualified keys".
-     */
-    std::shared_ptr<table> get_table_qualified(const std::string &key) const
+    std::shared_ptr<node> operator[](std::string_view key)
     {
-        if (contains_qualified(key) && get_qualified(key)->is_table())
-            return std::static_pointer_cast<table>(get_qualified(key));
-        return nullptr;
-    }
-
-    /**
-     * Obtains an array for a given key.
-     */
-    std::shared_ptr<array> get_array(const std::string &key) const
-    {
-        if (!contains(key))
+        if (auto it = map_.find(key); it != map_.end())
+        {
+            return it->second;
+        }
+        else
+        {
             return nullptr;
-        return get(key)->as_array();
-    }
-
-    /**
-     * Obtains an array for a given key. Will resolve "qualified keys".
-     */
-    std::shared_ptr<array> get_array_qualified(const std::string &key) const
-    {
-        if (!contains_qualified(key))
-            return nullptr;
-        return get_qualified(key)->as_array();
-    }
-
-    /**
-     * Obtains a table_array for a given key, if possible.
-     */
-    std::shared_ptr<table_array> get_table_array(const std::string &key) const
-    {
-        if (!contains(key))
-            return nullptr;
-        return get(key)->as_table_array();
-    }
-
-    /**
-     * Obtains a table_array for a given key, if possible. Will resolve
-     * "qualified keys".
-     */
-    std::shared_ptr<table_array>
-    get_table_array_qualified(const std::string &key) const
-    {
-        if (!contains_qualified(key))
-            return nullptr;
-        return get_qualified(key)->as_table_array();
-    }
-
-    /**
-     * Helper function that attempts to get a value corresponding
-     * to the template parameter from a given key.
-     */
-    template <class T>
-    std::optional<T> get_as(const std::string &key) const
-    {
-        try
-        {
-            return get_impl<T>(get(key));
-        }
-        catch (const std::out_of_range &)
-        {
-            return {};
         }
     }
 
-    /**
-     * Helper function that attempts to get a value corresponding
-     * to the template parameter from a given key. Will resolve "qualified
-     * keys".
-     */
-    template <class T>
-    std::optional<T> get_qualified_as(const std::string &key) const
+    // this will overwrite existing node
+    template <typename K, typename V, typename = std::enable_if_t<std::is_convertible_v<K &&, std::string_view>>>
+    std::pair<iterator, bool> insert_or_assign(K &&key, V &&val) noexcept
     {
-        try
+        return map_.insert_or_assign(std::forward<K>(key), std::forward<V>(val));
+    }
+
+    // this will not overwrite existing node
+    template <typename K, typename V, typename = std::enable_if_t<std::is_convertible_v<K &&, std::string_view>>>
+    std::pair<iterator, bool> emplace(K &&key, V &&val)
+    {
+        auto ipos = map_.lower_bound(key);
+        if (ipos == map_.end() || ipos->first != key)
         {
-            return get_impl<T>(get_qualified(key));
+            ipos = map_.emplace_hint(ipos, std::forward<K>(key), std::forward<V>(val));
+            return {ipos, true};
         }
-        catch (const std::out_of_range &)
+        return {ipos, false};
+    }
+
+    iterator erase(iterator pos)
+    {
+        return map_.erase(pos);
+    }
+
+    iterator erase(const_iterator pos)
+    {
+        return map_.erase(pos);
+    }
+
+    bool erase(std::string_view key)
+    {
+        if (auto it = map_.find(key); it != map_.end())
         {
-            return {};
+            map_.erase(it);
+            return true;
         }
-    }
-
-    /**
-     * Helper function that attempts to get an array of values of a given
-     * type corresponding to the template parameter for a given key.
-     *
-     * If the key doesn't exist, doesn't exist as an array type, or one or
-     * more keys inside the array type are not of type T, an empty optional
-     * is returned. Otherwise, an optional containing a vector of the values
-     * is returned.
-     */
-    template <class T>
-    inline typename array_of_trait<T>::return_type
-    get_array_of(const std::string &key) const
-    {
-        if (auto v = get_array(key))
+        else
         {
-            std::vector<T> result;
-            result.reserve(v->get().size());
-
-            for (const auto &b : v->get())
-            {
-                if (auto val = b->as<T>())
-                    result.push_back(val->get());
-                else
-                    return {};
-            }
-            return {std::move(result)};
+            return false;
         }
-
-        return {};
-    }
-
-    /**
-     * Helper function that attempts to get an array of values of a given
-     * type corresponding to the template parameter for a given key. Will
-     * resolve "qualified keys".
-     *
-     * If the key doesn't exist, doesn't exist as an array type, or one or
-     * more keys inside the array type are not of type T, an empty optional
-     * is returned. Otherwise, an optional containing a vector of the values
-     * is returned.
-     */
-    template <class T>
-    inline typename array_of_trait<T>::return_type
-    get_qualified_array_of(const std::string &key) const
-    {
-        if (auto v = get_array_qualified(key))
-        {
-            std::vector<T> result;
-            result.reserve(v->get().size());
-
-            for (const auto &b : v->get())
-            {
-                if (auto val = b->as<T>())
-                    result.push_back(val->get());
-                else
-                    return {};
-            }
-            return {std::move(result)};
-        }
-
-        return {};
-    }
-
-    /**
-     * Adds an element to the keytable.
-     */
-    void insert(const std::string &key, const std::shared_ptr<base> &value)
-    {
-        map_[key] = value;
-    }
-
-    /**
-     * Convenience shorthand for adding a simple element to the
-     * keytable.
-     */
-    template <class T>
-    void insert(const std::string &key, T &&val,
-                typename value_traits<T>::type * = 0)
-    {
-        insert(key, make_value(std::forward<T>(val)));
-    }
-
-    /**
-     * Removes an element from the table.
-     */
-    void erase(const std::string &key)
-    {
-        map_.erase(key);
     }
 
 private:
-#if defined(CPPTOML_NO_RTTI)
-    table() : base(base_type::TABLE)
-    {
-        // nothing
-    }
-#else
+    map map_;
+
     table()
-    {
-        // nothing
-    }
-#endif
+        : node(base_type::Table) {}
 
     table(const table &obj) = delete;
     table &operator=(const table &rhs) = delete;
-
-    std::vector<std::string> split(const std::string &value,
-                                   char separator) const
-    {
-        std::vector<std::string> result;
-        std::string::size_type p = 0;
-        std::string::size_type q;
-        while ((q = value.find(separator, p)) != std::string::npos)
-        {
-            result.emplace_back(value, p, q - p);
-            p = q + 1;
-        }
-        result.emplace_back(value, p);
-        return result;
-    }
-
-    // If output parameter p is specified, fill it with the pointer to the
-    // specified entry and throw std::out_of_range if it couldn't be found.
-    //
-    // Otherwise, just return true if the entry could be found or false
-    // otherwise and do not throw.
-    bool resolve_qualified(const std::string &key,
-                           std::shared_ptr<base> *p = nullptr) const
-    {
-        auto parts = split(key, '.');
-        auto last_key = parts.back();
-        parts.pop_back();
-
-        auto cur_table = this;
-        for (const auto &part : parts)
-        {
-            cur_table = cur_table->get_table(part).get();
-            if (!cur_table)
-            {
-                if (!p)
-                    return false;
-
-                throw std::out_of_range{key + " is not a valid key"};
-            }
-        }
-
-        if (!p)
-            return cur_table->map_.count(last_key) != 0;
-
-        *p = cur_table->map_.at(last_key);
-        return true;
-    }
-
-    string_to_base_map map_;
 };
+
+std::shared_ptr<table> make_table()
+{
+    return std::make_shared<table>(table::make_shared_enabler{});
+}
 TOML_NAMESPACE_END
 } // namespace toml

@@ -1,11 +1,12 @@
 include(GoogleTest)
 
 add_executable(toml_test
-    toml_test.cc
+    node_test.cc
 )
 
 target_link_libraries(
     toml_test
+    toml
     gtest_main
 )
 

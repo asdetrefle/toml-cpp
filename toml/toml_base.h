@@ -1,7 +1,9 @@
 #pragma once
 
+#include <map>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 #define TOML_STANDARD toml_1_0_0_rc1
@@ -14,34 +16,6 @@
 
 namespace toml
 {
-inline namespace TOML_STANDARD
-{
-enum class base_type
-{
-    None,
-    String,
-    Integer,
-    Float,
-    Boolean,
-    OffsetDateTime,
-    LocalDateTime,
-    LocalDate,
-    LocalTime,
-    Array,
-    Table,
-    TableArray,
-};
-
-class local_date;
-class local_time;
-class local_date_time;
-class time_offset;
-class offset_date_time;
-
-class array;
-class table;
-} // namespace TOML_STANDARD
-
 TOML_NAMESPACE_BEGIN
 
 template <typename T, typename... U>
@@ -55,7 +29,7 @@ template <class T>
 struct base_type_traits
 {
     using type = void;
-    static constexpr auto value = base_type::Unknown;
+    static constexpr auto value = base_type::None;
 };
 
 template <>
@@ -107,6 +81,7 @@ struct base_type_traits<local_date>
     static constexpr auto value = base_type::LocalDate;
 };
 
+template <>
 struct base_type_traits<local_time>
 {
     using type = local_time;
@@ -126,14 +101,6 @@ struct base_type_traits<array>
     using type = array;
     static constexpr auto value = base_type::Array;
 };
-
-class node;
-
-template <typename>
-class node_view;
-
-template <typename>
-class value;
 
 /// Type traits class to convert C++ types to enum member
 template <class T, class Enable = void>
@@ -160,7 +127,7 @@ struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<T,
 template <class T>
 struct value_type_traits<T, typename std::enable_if_t<std::is_floating_point_v<T>>>
 {
-    using type = typename T;
+    using type = T;
     static constexpr auto value = base_type::Float;
 };
 
@@ -172,22 +139,26 @@ struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<T, std::string
 };
 
 template <typename T>
-using map = std::map<string, T, std::less<>>;
-
-template <typename T>
 using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
 
 template <typename T>
-inline constexpr bool is_value_or_node = (base_type_traits<T>::value != base_type::Unknown);
+inline constexpr bool is_value_or_node = (base_type_traits<T>::value != base_type::None);
 
 template <typename T>
-inline constexpr bool is_value = (base_type_traits<T>::value != base_type::Unknown) &&
+inline constexpr bool is_value = (base_type_traits<T>::value != base_type::None) &&
                                  (base_type_traits<T>::value != base_type::Table) &&
                                  (base_type_traits<T>::value != base_type::Array);
 
 template <typename T>
-inline constexpr bool is_value_promotable = (value_type_traits<T>::value != base_type::Unknown) &&
+inline constexpr bool is_value_promotable = (value_type_traits<T>::value != base_type::None) &&
                                             (value_type_traits<T>::value != base_type::Table) &&
                                             (value_type_traits<T>::value != base_type::Array);
+
+template <class U>
+inline std::shared_ptr<value<typename value_type_traits<U>::type>> make_value(U &&val);
+inline std::shared_ptr<array> make_array();
+inline std::shared_ptr<table> make_table();
+//template <class U>
+//inline std::shared_ptr<node> make_node()
+TOML_NAMESPACE_END
 } // namespace toml
-}
