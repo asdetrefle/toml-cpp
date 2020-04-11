@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cctype>
 #include <fstream>
 #include <optional>
 #include <stdexcept>
@@ -18,42 +19,29 @@ struct source_position
     size_t column; // The column number starting at 1
 };
 
-struct source_region
-{
-    source_position begin; //The beginning of the region
-    source_position end;   // The end of the region
-};
-
 class parse_error : public std::runtime_error
 {
 public:
-    parse_error(const char *desc) noexcept
-        : std::runtime_error{desc} {}
-
     parse_error(const std::string &desc) noexcept
         : std::runtime_error{desc.data()} {}
 
     parse_error(const std::string &desc, size_t line_number) noexcept
-        : std::runtime_error{desc.data()} {}
-
-    parse_error(const char *desc, const source_region &src) noexcept
-        : std::runtime_error{desc},
-          source_{src} {}
+        : std::runtime_error{desc.data()},
+          source_{line_number, 0} {}
 
     std::string_view description() const noexcept
     {
         return std::string_view{what()};
     }
 
-    const source_region &
-    source() const noexcept
+    const source_position &source() const noexcept
     {
         return source_;
     }
 
 private:
-    source_region source_;
-}; // namespace toml
+    source_position source_;
+};
 
 class parse_result
 {
@@ -85,7 +73,7 @@ public:
         }
     }
 
-    const parse_error &error() const
+    const parse_error &err() const
     {
         if (is_err())
         {
@@ -104,12 +92,12 @@ public:
 
     explicit operator const parse_error &() const
     {
-        return error();
+        return err();
     }
 
     parse_result(std::shared_ptr<table> &&tbl) noexcept
         : is_error_{false},
-        result_{std::in_place_type<node_view<node>>, tbl} {}
+          result_{std::in_place_type<node_view<node>>, tbl} {}
 
     parse_result(parse_error &&err) noexcept
         : is_error_{true},
@@ -120,16 +108,6 @@ private:
     std::variant<node_view<node>, parse_error> result_;
 };
 
-inline bool is_number(char c)
-{
-    return c >= '0' && c <= '9';
-}
-
-inline bool is_hex(char c)
-{
-    return is_number(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-}
-
 /**
  * Helper object for consuming expected characters.
  */
@@ -137,12 +115,12 @@ template <class OnError>
 class consumer
 {
 public:
-    consumer(std::string::iterator &it, const std::string::iterator &end,
+    consumer(std::string::iterator &it,
+             const std::string::iterator &end,
              OnError &&on_error)
-        : it_(it), end_(end), on_error_(std::forward<OnError>(on_error))
-    {
-        // nothing
-    }
+        : it_(it),
+          end_(end),
+          on_error_(std::forward<OnError>(on_error)) {}
 
     void operator()(char c)
     {
@@ -158,7 +136,7 @@ public:
                       [&](char c) { (*this)(c); });
     }
 
-    void eat_or(char a, char b)
+    void eat_either(char a, char b)
     {
         if (it_ == end_ || (*it_ != a && *it_ != b))
             on_error_();
@@ -170,7 +148,7 @@ public:
         int val = 0;
         for (int i = 0; i < len; ++i)
         {
-            if (!is_number(*it_) || it_ == end_)
+            if (!std::isdigit(static_cast<unsigned char>(*it_)) || it_ == end_)
                 on_error_();
             val = 10 * val + (*it_++ - '0');
         }
@@ -510,9 +488,8 @@ private:
     }
 
     template <class KeyEndFinder, class KeyPartHandler>
-    std::string
-    parse_key(std::string::iterator &it, const std::string::iterator &end,
-              KeyEndFinder &&key_end, KeyPartHandler &&key_part_handler)
+    std::string parse_key(std::string::iterator &it, const std::string::iterator &end,
+                          KeyEndFinder &&key_end, KeyPartHandler &&key_part_handler)
     {
         // parse the key as a series of one or more simple-keys joined with '.'
         while (it != end && !key_end(*it))
@@ -673,7 +650,7 @@ private:
         {
             return date_type;
         }
-        else if (is_number(*it) || *it == '-' || *it == '+' ||
+        else if (std::isdigit(static_cast<unsigned char>(*it)) || *it == '-' || *it == '+' ||
                  (*it == 'i' && it + 1 != end && it[1] == 'n' && it + 2 != end && it[2] == 'f') ||
                  (*it == 'n' && it + 1 != end && it[1] == 'a' && it + 2 != end && it[2] == 'n'))
         {
@@ -699,12 +676,12 @@ private:
         if (*check_it == 'i' || *check_it == 'n')
             return numeric_type::Float;
 
-        while (check_it != end && is_number(*check_it))
+        while (check_it != end && std::isdigit(static_cast<unsigned char>(*check_it)))
             ++check_it;
         if (check_it != end && *check_it == '.')
         {
             ++check_it;
-            while (check_it != end && is_number(*check_it))
+            while (check_it != end && std::isdigit(static_cast<unsigned char>(*check_it)))
                 ++check_it;
             return numeric_type::Float;
         }
@@ -967,7 +944,7 @@ private:
             if (it == end)
                 throw_parse_exception("Unexpected end of unicode sequence");
 
-            if (!is_hex(*it))
+            if (!std::isxdigit(static_cast<unsigned char>(*it)))
                 throw_parse_exception("Invalid unicode escape sequence");
 
             value += place * hex_to_digit(*it++);
@@ -978,9 +955,14 @@ private:
 
     uint32_t hex_to_digit(char c)
     {
-        if (is_number(c))
+        if (std::isdigit(static_cast<unsigned char>(c)))
+        {
             return static_cast<uint32_t>(c - '0');
-        return 10 + static_cast<uint32_t>(c - ((c >= 'a' && c <= 'f') ? 'a' : 'A'));
+        }
+        else
+        {
+            return 10 + static_cast<uint32_t>(c - ((c >= 'a' && c <= 'f') ? 'a' : 'A'));
+        }
     }
 
     std::shared_ptr<node> parse_number(std::string::iterator &it,
@@ -1001,7 +983,7 @@ private:
             }
         };
 
-        auto eat_digits = [&](bool (*check_char)(char)) {
+        auto eat_digits = [&](std::function<bool(char)> &&check_char) {
             auto beg = check_it;
             while (check_it != end && check_char(*check_it))
             {
@@ -1010,19 +992,27 @@ private:
                 {
                     ++check_it;
                     if (check_it == end || !check_char(*check_it))
-                        throw_parse_exception("Malformed number");
+                        throw_parse_exception("Malformed number 1");
                 }
             }
 
             if (check_it == beg)
-                throw_parse_exception("Malformed number");
+                throw_parse_exception("Malformed number 2");
         };
 
-        auto eat_hex = [&]() { eat_digits(&is_hex); };
+        auto eat_hex = [&]() {
+            eat_digits([](char c) -> bool {
+                return std::isxdigit(static_cast<unsigned char>(c));
+            });
+        };
+        auto eat_decimal = [&]() {
+            eat_digits([](char c) -> bool {
+                return std::isdigit(static_cast<unsigned char>(c));
+            });
+        };
 
-        auto eat_numbers = [&]() { eat_digits(&is_number); };
-
-        if (check_it != end && *check_it == '0' && check_it + 1 != check_end && (check_it[1] == 'x' || check_it[1] == 'o' || check_it[1] == 'b'))
+        if (check_it != end && *check_it == '0' && check_it + 1 != check_end &&
+            (check_it[1] == 'x' || check_it[1] == 'o' || check_it[1] == 'b'))
         {
             ++check_it;
             char base = *check_it;
@@ -1035,7 +1025,7 @@ private:
             else if (base == 'o')
             {
                 auto start = check_it;
-                eat_numbers();
+                eat_decimal();
                 auto val = parse_int(start, check_it, 8, "0");
                 it = start;
                 return val;
@@ -1043,7 +1033,7 @@ private:
             else // if (base == 'b')
             {
                 auto start = check_it;
-                eat_numbers();
+                eat_decimal();
                 auto val = parse_int(start, check_it, 2);
                 it = start;
                 return val;
@@ -1073,7 +1063,7 @@ private:
             }
         }
 
-        eat_numbers();
+        eat_decimal();
 
         if (check_it != end && (*check_it == '.' || *check_it == 'e' || *check_it == 'E'))
         {
@@ -1086,13 +1076,13 @@ private:
             auto eat_exp = [&]() {
                 eat_sign();
                 check_no_leading_zero();
-                eat_numbers();
+                eat_decimal();
             };
 
             if (is_exp)
                 eat_exp();
             else
-                eat_numbers();
+                eat_decimal();
 
             if (!is_exp && check_it != end && (*check_it == 'e' || *check_it == 'E'))
             {
@@ -1179,11 +1169,15 @@ private:
                                                     std::string::iterator end)
     {
         auto ret = std::find_if(it, end, [](char c) {
-            return !is_number(c) && c != '_' && c != '.' && c != 'e' && c != 'E' && c != '-' && c != '+' && c != 'x' && c != 'o' && c != 'b';
+            return !std::isdigit(static_cast<unsigned char>(c)) &&
+                   c != '_' && c != '.' && c != 'e' &&
+                   c != 'E' && c != '-' && c != '+' &&
+                   c != 'x' && c != 'o' && c != 'b';
         });
         if (ret != end && ret + 1 != end && ret + 2 != end)
         {
-            if ((ret[0] == 'i' && ret[1] == 'n' && ret[2] == 'f') || (ret[0] == 'n' && ret[1] == 'a' && ret[2] == 'n'))
+            if ((ret[0] == 'i' && ret[1] == 'n' && ret[2] == 'f') ||
+                (ret[0] == 'n' && ret[1] == 'a' && ret[2] == 'n'))
             {
                 ret = ret + 3;
             }
@@ -1195,11 +1189,15 @@ private:
                                              std::string::iterator end)
     {
         auto ret = std::find_if(it, end, [](char c) {
-            return !is_number(c) && c != '_' && c != '.' && c != 'e' && c != 'E' && c != '-' && c != '+' && c != 'x' && c != 'o' && c != 'b';
+            return !std::isdigit(static_cast<unsigned char>(c)) &&
+                   c != '_' && c != '.' && c != 'e' &&
+                   c != 'E' && c != '-' && c != '+' &&
+                   c != 'x' && c != 'o' && c != 'b';
         });
         if (ret != end && ret + 1 != end && ret + 2 != end)
         {
-            if ((ret[0] == 'i' && ret[1] == 'n' && ret[2] == 'f') || (ret[0] == 'n' && ret[1] == 'a' && ret[2] == 'n'))
+            if ((ret[0] == 'i' && ret[1] == 'n' && ret[2] == 'f') ||
+                (ret[0] == 'n' && ret[1] == 'a' && ret[2] == 'n'))
             {
                 ret = ret + 3;
             }
@@ -1211,12 +1209,19 @@ private:
                                            std::string::iterator end)
     {
         auto end_of_date = std::find_if(it, end, [](char c) {
-            return !is_number(c) && c != '-';
+            return !std::isdigit(static_cast<unsigned char>(c)) && c != '-';
         });
-        if (end_of_date != end && *end_of_date == ' ' && end_of_date + 1 != end && is_number(end_of_date[1]))
+
+        if (end_of_date != end && *end_of_date == ' ' && end_of_date + 1 != end &&
+            std::isdigit(static_cast<unsigned char>(end_of_date[1])))
+        {
             end_of_date++;
+        }
+
         return std::find_if(end_of_date, end, [](char c) {
-            return !is_number(c) && c != 'T' && c != 'Z' && c != ':' && c != '-' && c != '+' && c != '.';
+            return !std::isdigit(static_cast<unsigned char>(c)) &&
+                   c != 'T' && c != 'Z' && c != ':' &&
+                   c != '-' && c != '+' && c != '.';
         });
     }
 
@@ -1224,7 +1229,7 @@ private:
                                            std::string::iterator end)
     {
         return std::find_if(it, end, [](char c) {
-            return !is_number(c) && c != ':' && c != '.';
+            return !std::isdigit(static_cast<unsigned char>(c)) && c != ':' && c != '.';
         });
     }
 
@@ -1248,7 +1253,7 @@ private:
         if (it != time_end && *it == '.')
         {
             ++it;
-            while (it != time_end && is_number(*it))
+            while (it != time_end && std::isdigit(static_cast<unsigned char>(*it)))
             {
                 ltime.nanosecond += power * (*it++ - '0') * 1000;
                 power /= 10;
@@ -1285,7 +1290,7 @@ private:
         if (it == date_end)
             return make_value(std::move(ldate));
 
-        eat.eat_or('T', ' ');
+        eat.eat_either('T', ' ');
 
         local_date_time ldt;
         static_cast<local_date &>(ldt) = ldate;
@@ -1339,9 +1344,7 @@ private:
         while (it != end && *it != ']')
         {
             skip_whitespace_and_comments(it, end);
-
             arr->push_back(parse_value(it, end));
-
             skip_whitespace_and_comments(it, end);
             if (*it != ',')
                 break;
@@ -1486,19 +1489,15 @@ parse_result parse_file(const std::string &file_path)
     }
     else
     {
-        /*
-        auto tbl = make_table();
-        tbl->insert_or_assign("haha", make_value(1));
-
-        auto array = make_array();
-        array->emplace_back<double>(0.5);
-
-        tbl->insert_or_assign("hoho", array);
-        return {std::move(tbl)};
-        */
-
-        parser p{file};
-        return p.parse();
+        try
+        {
+            parser p{file};
+            return {p.parse()};
+        }
+        catch (parse_error e)
+        {
+            return {std::move(e)};
+        }
     }
 }
 TOML_NAMESPACE_END

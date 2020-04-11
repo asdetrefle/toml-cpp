@@ -18,7 +18,7 @@ But any contributions or suggestions are very welcome!
 
 C++ Alternatives:
 - [toml++][tomlplusplus] is a C++17/20 implementation of a TOML parser,
-  which also v1.0.0-rc.1 as of writing.
+  which also supports v1.0.0-rc.1 as of writing.
 - [Boost.toml][boost.toml] is an implementation of a TOML parser using
   the Boost library. As of December 2019, it supports v0.5.0 as well.
 - [ctoml][ctoml] is a C++11 implementation of a TOML parser, but only
@@ -144,36 +144,13 @@ key3 = "hello world"
 Here's an idiomatic way of obtaining all three keys' values:
 
 ```cpp
-auto config = cpptoml::parse_file("config.toml");
-auto key1 = config->get_qualified_as<double>("first-table.key1");
-auto key2 = config->get_qualified_as<int>("first-table.key2");
-auto key3 = config->get_qualified_as<std::string>("first-table.inner.key3");
-```
+#include "toml/toml.hpp"
 
-(Note that, because the TOML spec allows for "." to occur in a table name,
-you won't *always* be able to do this for any nested key, but in practice
-you should be fine.)
+auto config = toml::parse_file("examples/example.toml").ok();
 
-A slightly more verbose way of getting them would be to first obtain the
-individual tables, and then query those individual tables for their keys
-like so:
-
-```cpp
-auto config = cpptoml::parse_file("config.toml");
-
-auto first = config->get_table("first-table");
-auto key1 = first->get_as<double>("key1");
-auto key2 = first->get_as<int>("key2");
-
-auto inner = first->get_table("inner");
-auto key3 = inner->get_as<std::string>("key3");
-```
-
-The function `get_table_qualified` also exists, so obtaining the inner
-table could be written as
-
-```cpp
-auto inner2 = config->get_table_qualified("first-table.inner");
+// get key-value pairs
+auto title = config["title"].value_or(""sv);          // "TOML Example"
+auto author = config["owner"]["name"].value_or(""sv); // "Tom Preston-Werner"
 ```
 
 ## Arrays of Values
