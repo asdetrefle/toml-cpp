@@ -24,13 +24,14 @@ public:
 
     bool is_value() const noexcept
     {
-        return type_ != base_type::None && type_ != base_type::Table && type_ != base_type::Array;
+        return static_cast<uint8_t>(type_) > 0 &&
+               static_cast<uint8_t>(type_) < 9;
     }
 
     template <typename T>
     bool is_value() const noexcept
     {
-        return type_ == value_type_traits<T>::value;
+        return is_value() && type_ == value_type_traits<T>::value;
     }
 
     bool is_table() const noexcept
@@ -40,7 +41,7 @@ public:
 
     bool is_array() const noexcept
     {
-        return type_ == base_type::Array;
+        return type_ == base_type::Array || type_ == base_type::TableArray;
     }
 
     virtual bool is_table_array() const noexcept

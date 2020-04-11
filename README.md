@@ -1,25 +1,32 @@
-# cpptoml
-A header-only library for parsing [TOML][toml] configuration files.
+# toml
+A header-only C++17 library for parsing [TOML][toml] configuration files.
 
-Targets: [TOML v0.5.0][currver] as of August 2018.
+Targets: [TOML v1.0.0-rc.1][currver] as of April 2020.
 
-This includes support for the new DateTime format, inline tables,
-multi-line basic and raw strings, digit separators, hexadecimal integers,
-octal integers, binary integers, and float special values.
+## Motivation:
 
-Alternatives:
-- [Boost.toml][boost.toml] is a C++ implementation of a TOML parser using
-  the Boost library. As of writing, it supports v0.5.0 as well.
+This projected was previously a fork of [cpptoml][cpptoml], but rewritten
+according to the new released standard [v1.0.0-rc.1][currver]. This 
+includes support for features like mixed type arrays.
+
+Many of the concepts and implementation are brought from [toml++][tomlplusplus]
+which seems a bit heavy and complicated for my use case. [cpptoml][cpptoml] was
+perfect while some features from [toml++][tomlplusplus] are really attractive, 
+for example the idea of `node_view` for chaining query of nested tables. So I 
+decide to change a bit [cpptoml][cpptoml] and make it what I think is best. 
+But any contributions or suggestions are very welcome!
+
+C++ Alternatives:
+- [toml++][tomlplusplus] is a C++17/20 implementation of a TOML parser,
+  which also v1.0.0-rc.1 as of writing.
+- [Boost.toml][boost.toml] is an implementation of a TOML parser using
+  the Boost library. As of December 2019, it supports v0.5.0 as well.
 - [ctoml][ctoml] is a C++11 implementation of a TOML parser, but only
   supports v0.2.0.
-- [libtoml][libtoml] is a C implementation of a TOML parser, which can be
-  linked to from your C++ programs easily. As of April 2016, it supports
-  v0.4.0.
 - [tinytoml][tinytoml] is a C++11 implementation of a TOML parser, which
   also supports v0.4.0 as of November 2015.
 
 ## Build Status
-[![Build Status](https://travis-ci.org/skystrife/cpptoml.svg?branch=master)](https://travis-ci.org/skystrife/cpptoml)
 
 ## Test Results
 
@@ -246,7 +253,8 @@ entire `cpptoml::table` for serialization.
 `build_toml.cpp` shows how to construct a TOML representation in-memory and
 then serialize it to a stream.
 
-[currver]: https://github.com/toml-lang/toml/blob/master/versions/en/toml-v0.5.0.md
+[currver]: https://github.com/toml-lang/toml/blob/master/versions/en/toml-v1.0.0-rc.1.md
+[cpptoml]: https://github.com/skystrife/cpptoml
 [toml]: https://github.com/toml-lang/toml
 [toml-test]: https://github.com/BurntSushi/toml-test
 [toml-test-fork]: https://github.com/skystrife/toml-test
@@ -254,3 +262,4 @@ then serialize it to a stream.
 [libtoml]: https://github.com/ajwans/libtoml
 [tinytoml]: https://github.com/mayah/tinytoml
 [boost.toml]: https://github.com/ToruNiina/Boost.toml
+[tomlplusplus]: https://github.com/marzer/tomlplusplus

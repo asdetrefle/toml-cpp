@@ -9,10 +9,11 @@ TOML_NAMESPACE_BEGIN
 template <typename T>
 class node_view final
 {
-    friend class toml::parse_result;
-
 public:
     node_view() noexcept = default;
+
+    node_view(std::shared_ptr<T> &&node) noexcept
+        : node_{std::const_pointer_cast<std::remove_cv_t<T>>(node)} {}
 
     explicit operator bool() const noexcept
     {
@@ -45,20 +46,10 @@ public:
         return node_ && node_->is_array();
     }
 
-    /*
-    bool is_table() const noexcept { return node_ && node_->is_table(); }
-    bool is_array() const noexcept { return node_ && node_->is_array(); }
-    bool is_value() const noexcept { return node_ && node_->is_value(); }
-    bool is_string() const noexcept { return node_ && node_->is_string(); }
-    bool is_integer() const noexcept { return node_ && node_->is_integer(); }
-    bool is_floating_point() const noexcept { return node_ && node_->is_floating_point(); }
-    bool is_number() const noexcept { return node_ && node_->is_number(); }
-    bool is_boolean() const noexcept { return node_ && node_->is_boolean(); }
-    bool is_date() const noexcept { return node_ && node_->is_date(); }
-    bool is_time() const noexcept { return node_ && node_->is_time(); }
-    bool is_date_time() const noexcept { return node_ && node_->is_date_time(); }
-    bool is_array_of_tables() const noexcept { return node_ && node_->is_array_of_tables(); }
-    */
+    bool is_table_array() const noexcept
+    {
+        return node_ && node_->is_table_array();
+    }
 
     template <class U>
     auto as_value()
@@ -81,24 +72,7 @@ public:
     {
         return node_ ? node_->as_table() : nullptr;
     }
-    /*
-    
-    auto as_string() const noexcept { return as<string>(); }
-    auto as_integer() const noexcept { return as<int64_t>(); }
-    auto as_floating_point() const noexcept { return as<double>(); }
-    auto as_boolean() const noexcept { return as<bool>(); }
-    auto as_date() const noexcept { return as<date>(); }
-    auto as_time() const noexcept { return as<time>(); }
-    auto as_date_time() const noexcept { return as<date_time>(); }
-    */
 
-    /// \brief	Gets the raw value contained by the referenced node.
-    ///
-    /// \tparam	U	One of the TOML value types. Can also be a string_view.
-    ///
-    /// \returns	The underlying value if the node was a value of the matching type (or convertible to it), or an empty optional.
-    ///
-    /// \see node::value()
     template <typename U>
     std::optional<U> value() const noexcept
     {
@@ -112,16 +86,6 @@ public:
         }
     }
 
-    /// \brief	Gets the raw value contained by the referenced node, or a default.
-    ///
-    /// \tparam	U	Default value type. Must be (or be promotable to) one of the TOML value types.
-    /// \param 	default_value	The default value to return if the view did not reference a node,
-    /// 						or if the node wasn't a value, wasn't the correct type, or no conversion was possible.
-    ///
-    /// \returns	The node's underlying value, or the default if the node wasn't a value, wasn't the
-    /// 			correct type, or no conversion was possible.
-    ///
-    /// \see node::value_or()
     template <typename U>
     auto value_or(U &&default_value) const noexcept
     {
@@ -276,34 +240,8 @@ public:
     }
 
 private:
-    node_view(std::shared_ptr<T> &&node) noexcept
-        : node_{std::const_pointer_cast<std::remove_cv_t<T>>(node)} {}
-
     std::shared_ptr<std::remove_cv_t<T>> node_;
-
-    /*
-    template <typename FUNC>
-    static constexpr bool visit_is_nothrow = noexcept(std::declval<viewed_type *>()->visit(std::declval<FUNC &&>()));
-
-    template <typename CHAR, typename U>
-    friend std::basic_ostream<CHAR> &operator<<(std::basic_ostream<CHAR> &, const node_view<U> &) TOML_MAY_THROW;
-    */
 };
-
-/*
-/// \brief	Prints the viewed node out to a stream.
-template <typename CHAR, typename T>
-inline std::basic_ostream<CHAR> &operator<<(std::basic_ostream<CHAR> &os, const node_view<T> &nv) TOML_MAY_THROW
-{
-    if (nv.node_)
-    {
-        nv.node_->visit([&os](const auto &n) TOML_MAY_THROW {
-            os << n;
-        });
-    }
-    return os;
-}
-*/
 
 template class node_view<node>;
 template class node_view<const node>;

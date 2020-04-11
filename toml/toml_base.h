@@ -146,19 +146,16 @@ inline constexpr bool is_value_or_node = (base_type_traits<T>::value != base_typ
 
 template <typename T>
 inline constexpr bool is_value = (base_type_traits<T>::value != base_type::None) &&
-                                 (base_type_traits<T>::value != base_type::Table) &&
-                                 (base_type_traits<T>::value != base_type::Array);
+                                 static_cast<uint8_t>(base_type_traits<T>::value) < 9;
 
 template <typename T>
 inline constexpr bool is_value_promotable = (value_type_traits<T>::value != base_type::None) &&
-                                            (value_type_traits<T>::value != base_type::Table) &&
-                                            (value_type_traits<T>::value != base_type::Array);
+                                            static_cast<uint8_t>(value_type_traits<T>::value) < 9;
 
 template <class U>
 inline std::shared_ptr<value<typename value_type_traits<U>::type>> make_value(U &&val);
 inline std::shared_ptr<array> make_array();
-inline std::shared_ptr<table> make_table();
-//template <class U>
-//inline std::shared_ptr<node> make_node()
+inline std::shared_ptr<table> make_table(bool is_inline = false);
+
 TOML_NAMESPACE_END
 } // namespace toml

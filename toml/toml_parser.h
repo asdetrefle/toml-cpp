@@ -1,143 +1,183 @@
 #pragma once
 
-#include <fstream>
-#include <stdexcept>
-#include <variant>
 #include "toml_base.h"
-#include "toml_table.h"
-#include "toml_node_view.h"
+#include "toml_node.h"
 
 namespace toml
 {
 TOML_NAMESPACE_BEGIN
-
-struct source_position
+/**
+ * Represents a TOML keytable.
+ */
+class table final : public node
 {
-    size_t line;   // The line number starting at 1
-    size_t column; // The column number starting at 1
-};
+    struct make_shared_enabler
+    {
+    };
+    friend std::shared_ptr<table> make_table(bool is_inline);
 
-struct source_region
-{
-    source_position begin; //The beginning of the region
-    source_position end;   // The end of the region
-};
-
-class parse_error : public std::runtime_error
-{
 public:
-    parse_error(const char *desc) noexcept
-        : std::runtime_error{desc} {}
+    using map = std::map<std::string, std::shared_ptr<node>, std::less<>>;
 
-    parse_error(const std::string &desc) noexcept
-        : std::runtime_error{desc.data()} {}
+    using key_type = std::string;
+    using value_type = std::shared_ptr<node>;
+    using size_type = size_t;
 
-    parse_error(const char *desc, const source_region &src) noexcept
-        : std::runtime_error{desc},
-          source_{src} {}
+    using iterator = map::iterator;
+    using const_iterator = map::const_iterator;
 
-    std::string_view description() const noexcept
+    table(const make_shared_enabler &, bool is_inline) noexcept
+        : node(base_type::Table),
+          is_inline_(is_inline) {}
+
+    std::shared_ptr<node> clone() const override
     {
-        return std::string_view{what()};
+        auto result = make_table();
+        for (const auto &pr : map_)
+            result->emplace(pr.first, pr.second->clone());
+        return result;
     }
 
-    const source_region &
-    source() const noexcept
+    iterator begin() noexcept
     {
-        return source_;
+        return map_.begin();
     }
 
-private:
-    source_region source_;
-}; // namespace toml
-
-class parse_result
-{
-public:
-    bool is_ok() const noexcept
+    const_iterator begin() const noexcept
     {
-        return !is_error_;
+        return map_.begin();
     }
 
-    bool is_err() const noexcept
+    const_iterator cbegin() const noexcept
     {
-        return is_error_;
+        return map_.cbegin();
     }
 
-    explicit operator bool() const noexcept
+    iterator end() noexcept
     {
-        return !is_error_;
+        return map_.end();
     }
 
-    node_view<node> ok() noexcept
+    const_iterator end() const noexcept
     {
-        if (is_ok())
+        return map_.end();
+    }
+
+    const_iterator cend() const noexcept
+    {
+        return map_.cend();
+    }
+
+    bool is_inline() const noexcept
+    {
+        return is_inline_;
+    }
+
+    bool empty() const noexcept
+    {
+        return map_.empty();
+    }
+
+    size_t size() const noexcept
+    {
+        return map_.size();
+    }
+
+    bool contains(std::string_view key) const
+    {
+        return map_.find(key) != map_.end();
+    }
+
+    map &get() noexcept
+    {
+        return map_;
+    }
+
+    const map &get() const noexcept
+    {
+        return map_;
+    }
+
+    iterator find(std::string_view key)
+    {
+        return map_.find(key);
+    }
+
+    const_iterator find(std::string_view key) const
+    {
+        return map_.find(key);
+    }
+
+    std::shared_ptr<node> operator[](std::string_view key)
+    {
+        if (auto it = map_.find(key); it != map_.end())
         {
-            return std::get<node_view<node>>(result_);
+            return it->second;
         }
         else
         {
-            return {nullptr};
+            return nullptr;
         }
     }
 
-    const parse_error &error() const
+    // this will overwrite existing node
+    template <typename K, typename V, typename = std::enable_if_t<std::is_convertible_v<K &&, std::string_view>>>
+    std::pair<iterator, bool> insert_or_assign(K &&key, V &&val) noexcept
     {
-        if (is_err())
+        return map_.insert_or_assign(std::forward<K>(key), std::forward<V>(val));
+    }
+
+    // this will not overwrite existing node
+    template <typename K, typename V, typename = std::enable_if_t<std::is_convertible_v<K &&, std::string_view>>>
+    std::pair<iterator, bool> emplace(K &&key, V &&val)
+    {
+        auto ipos = map_.lower_bound(key);
+        if (ipos == map_.end() || ipos->first != key)
         {
-            return std::get<parse_error>(result_);
+            ipos = map_.emplace_hint(ipos, std::forward<K>(key), std::forward<V>(val));
+            return {ipos, true};
+        }
+        return {ipos, false};
+    }
+
+    iterator erase(iterator pos)
+    {
+        return map_.erase(pos);
+    }
+
+    iterator erase(const_iterator pos)
+    {
+        return map_.erase(pos);
+    }
+
+    bool erase(std::string_view key)
+    {
+        if (auto it = map_.find(key); it != map_.end())
+        {
+            map_.erase(it);
+            return true;
         }
         else
         {
-            throw std::runtime_error("parse result is not an error");
+            return false;
         }
     }
 
-    operator node_view<node>() noexcept
-    {
-        return ok();
-    }
-
-    explicit operator const parse_error &() const
-    {
-        return error();
-    }
-
-    parse_result(std::shared_ptr<table> &&tbl) noexcept
-        : is_error_{false}
-    {
-        node_view<node> view{tbl};
-        result_.emplace<node_view<node>>(view);
-    }
-
-    parse_result(parse_error &&err) noexcept
-        : is_error_{true},
-          result_{std::in_place_type<parse_error>, err} {}
-
 private:
-    bool is_error_;
-    std::variant<node_view<node>, parse_error> result_;
+    map map_;
+    bool is_inline_{false};
+
+    table(bool is_inline)
+        : node(base_type::Table),
+          is_inline_(is_inline) {}
+
+    table(const table &obj) = delete;
+    table &operator=(const table &rhs) = delete;
 };
 
-parse_result parse_file(const std::string &file_path)
+std::shared_ptr<table> make_table(bool is_inline)
 {
-    std::ifstream file{file_path};
-
-    if (0 && !file.is_open())
-    {
-        return {parse_error(file_path + " could not be opened for parsing")};
-    }
-    else
-    {
-        auto tbl = make_table();
-        tbl->insert_or_assign("haha", make_value(1));
-
-        auto array = make_array();
-        array->emplace_back<double>(0.5);
-
-        tbl->insert_or_assign("hoho", array);
-        return {std::move(tbl)};
-    }
+    return std::make_shared<table>(table::make_shared_enabler{}, is_inline);
 }
 TOML_NAMESPACE_END
 } // namespace toml

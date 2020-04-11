@@ -40,6 +40,11 @@ public:
         return result;
     }
 
+    base_type type() const noexcept
+    {
+        return is_table_array() ? base_type::TableArray : type();
+    }
+
     iterator begin() noexcept
     {
         return nodes_.begin();
@@ -85,7 +90,7 @@ public:
         nodes_.reserve(n);
     }
 
-    template <typename T = void>
+    template <typename T>
     bool is_homogeneous() const noexcept
     {
         if (nodes_.empty())
@@ -93,25 +98,11 @@ public:
             return false;
         }
 
-        if constexpr (std::is_same_v<T, void>)
+        for (const auto &n : nodes_)
         {
-            const auto type = nodes_[0]->type();
-            for (size_t i = 1; i < nodes_.size(); ++i)
+            if (n->type() != value_type_traits<T>::value)
             {
-                if (nodes_[i]->type() != type)
-                {
-                    return false;
-                }
-            }
-        }
-        else
-        {
-            for (const auto &n : nodes_)
-            {
-                if (n->type() != value_type_traits<T>::value)
-                {
-                    return false;
-                }
+                return false;
             }
         }
         return true;

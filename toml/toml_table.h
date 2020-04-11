@@ -14,7 +14,7 @@ class table final : public node
     struct make_shared_enabler
     {
     };
-    friend std::shared_ptr<table> make_table();
+    friend std::shared_ptr<table> make_table(bool is_inline);
 
 public:
     using map = std::map<std::string, std::shared_ptr<node>, std::less<>>;
@@ -26,8 +26,9 @@ public:
     using iterator = map::iterator;
     using const_iterator = map::const_iterator;
 
-    table(const make_shared_enabler &) noexcept
-        : node(base_type::Table) {}
+    table(const make_shared_enabler &, bool is_inline) noexcept
+        : node(base_type::Table),
+          is_inline_(is_inline) {}
 
     std::shared_ptr<node> clone() const override
     {
@@ -65,6 +66,11 @@ public:
     const_iterator cend() const noexcept
     {
         return map_.cend();
+    }
+
+    bool is_inline() const noexcept
+    {
+        return is_inline_;
     }
 
     bool empty() const noexcept
@@ -159,17 +165,19 @@ public:
 
 private:
     map map_;
+    bool is_inline_{false};
 
-    table()
-        : node(base_type::Table) {}
+    table(bool is_inline)
+        : node(base_type::Table),
+          is_inline_(is_inline) {}
 
     table(const table &obj) = delete;
     table &operator=(const table &rhs) = delete;
 };
 
-std::shared_ptr<table> make_table()
+std::shared_ptr<table> make_table(bool is_inline)
 {
-    return std::make_shared<table>(table::make_shared_enabler{});
+    return std::make_shared<table>(table::make_shared_enabler{}, is_inline);
 }
 TOML_NAMESPACE_END
 } // namespace toml

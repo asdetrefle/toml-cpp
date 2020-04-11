@@ -12,7 +12,7 @@ namespace toml
 {
 TOML_NAMESPACE_BEGIN
 
-enum class base_type
+enum class base_type : uint8_t
 {
     None = 0,
     String,
@@ -25,7 +25,7 @@ enum class base_type
     LocalTime,
     Array,
     Table,
-    TableArray
+    TableArray,
 };
 
 class local_date;
@@ -50,6 +50,7 @@ TOML_NAMESPACE_END
 } // namespace toml
 
 #include "toml/toml_base.h"
+#include "toml/toml_date_time.h"
 #include "toml/toml_node.h"
 #include "toml/toml_node_view.h"
 #include "toml/toml_value.h"

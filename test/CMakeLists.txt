@@ -1,7 +1,7 @@
 include(GoogleTest)
 
 add_executable(toml_test
-    node_test.cc
+    parse_test.cc
 )
 
 target_link_libraries(
