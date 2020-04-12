@@ -29,6 +29,77 @@ C++ Alternatives:
 
 ## Build Status
 
+## Example Usage
+To parse a configuration file from a file, you can do the following:
+
+```cpp
+#include "toml/toml.h"
+
+/**
+ * `parse_file()` returns a `node_view` of a `toml::table`, which owns
+ * a copy of `std::shared_ptr<table>` so there is no lifetime issue.
+ * It will return an empty view if it catches an `toml::parse_error`.
+ * */
+auto config = cpptoml::parse_file("examples/example.toml").ok();
+
+// ## Obtaining Basic Values
+auto title = config["title"].value_or(""sv); // "TOML Example"sv
+// or you want to have a `std::optional<std::string_view>`
+auto optional_title = config["title"].value<std::string_view>().value();
+
+/** ## Nested Tables
+ * Nested tables can be queried directly by chaining `[]` operator through
+ * the `node_view` and you can use a `map` function to convert to your data type
+ * */
+auto author = config["owner"]["name"].value_or(""sv); // "Tom Preston-Werner"
+
+// empty `std::optional<T>` will be mapped if node does not exist
+auto dob = config["owner"]["dob"].map<offset_date_time>([](const auto &val) {
+    return val.year * 10000 + val.month * 100 + val.day;
+}); // std::optional<19790527>
+
+/** ## Arrays of Values
+ * Similarly to `toml::table`, you can access the `node` of a table by `[]`
+ * operator. The are also `collect` and `map_collect` provided for convenience:
+ * */
+
+auto gamma = view["clients"]["data"][0][0].value_or(""sv);
+// std::vector{"gamma"sv, "delta"sv}
+auto data0 = view["clients"]["data"][0].collect<std::string_view>();
+// std::vector{8000, 8000, 8001}
+auto ports = view["database"]["ports"].map_collect<int>([](const auto &val) {
+                                                            return val - 1;
+                                                        });
+
+/**
+ * ## Arrays of Tables is the same as arrays
+ * /*
+```
+
+toml has extended support for dates and times beyond the TOML v0.4.0
+spec. Specifically, it supports
+
+- Local Date (`local_date`), which simply represents a date and lacks any time
+  information, e.g. `1980-08-02`;
+- Local Time (`local_time`), which simply represents a time and lacks any
+  date or zone information, e.g. `12:10:03.001`;
+- Local Date-time (`local_date_time`), which represents a date and a time,
+  but lacks zone information, e.g. `1980-08-02T12:10:03.001`;
+- and Offset Date-time (`offset_date_time`), which represents a date, a
+  time, and timezone information, e.g. `1980-08-02T12:10:03.001-07:00`
+
+Here are the fields of the date/time objects in cpptoml:
+
+- year (`local_date`, `local_date_time`, `offset_date_time`)
+- month (`local_date`, `local_date_time`, `offset_date_time`)
+- day (`local_date`, `local_date_time`, `offset_date_time`)
+- hour (`local_time`, `local_date_time`, `offset_date_time`)
+- minute (`local_time`, `local_date_time`, `offset_date_time`)
+- second (`local_time`, `local_date_time`, `offset_date_time`)
+- nanosecond (`local_time`, `local_date_time`, `offset_date_time`)
+- minute\_offset (`offset_date_time`)
+
+
 ## Test Results
 
 From [the toml-test suite][toml-test]:
@@ -37,16 +108,7 @@ From [the toml-test suite][toml-test]:
 126 passed, 0 failed // TODO with TOML v1.0.0-rc.1
 ```
 
-We also currently maintain (but hopefully not indefinitely!) a [fork of the
-toml-test suite][toml-test-fork] that adds tests for features and
-clarifications that have been added to the TOML spec more recently than
-toml-test has been updated. We pass every test there.
-
-```
-148 passed, 0 failed
-```
-
-# Compilation
+## Compilation
 Requires a well conforming C++17 compiler. This project is not going to seek backward
 compatibility for g++ < 9.x. Currently only tested on Linux.
 
@@ -57,112 +119,6 @@ mkdir build
 cd build
 cmake ../
 make
-```
-
-# Example Usage
-To parse a configuration file from a file, you can do the following:
-
-```cpp
-#include "toml/toml.h"
-
-auto config = cpptoml::parse_file("examples/example.toml").ok();
-```
-
-`parse_file()` returns a `node_view` of a `toml::table`, which you can then 
-query. The view owns a `std::shared_ptr<toml::table>` so you don't have to worry
-about the lifetime issue. It will return an empty view if it catches an 
-`toml::parse_error` in the event that the file failed to parse.
-
-## Obtaining Basic Values
-You can find basic values like so:
-
-```cpp
-auto title = config["title"];
-
-// there are two ways to query a value
-assert(title.value<std::string_view>().value() == "TOML Example");
-assert(title.value_or(""sv) == "TOML Example");
-
-```
-
-cpptoml has extended support for dates and times beyond the TOML v0.4.0
-spec. Specifically, it supports
-
-- Local Date (`local_date`), which simply represents a date and lacks any time
-  information, e.g. `1980-08-02`;
-- Local Time (`local_time`), which simply represents a time and lacks any
-  date or zone information, e.g. `12:10:03.001`;
-- Local Date-time (`local_datetime`), which represents a date and a time,
-  but lacks zone information, e.g. `1980-08-02T12:10:03.001`;
-- and Offset Date-time (`offset_datetime`), which represents a date, a
-  time, and timezone information, e.g. `1980-08-02T12:10:03.001-07:00`
-
-Here are the fields of the date/time objects in cpptoml:
-
-- year (`local_date`, `local_datetime`, `offset_datetime`)
-- month (`local_date`, `local_datetime`, `offset_datetime`)
-- day (`local_date`, `local_datetime`, `offset_datetime`)
-- hour (`local_time`, `local_datetime`, `offset_datetime`)
-- minute (`local_time`, `local_datetime`, `offset_datetime`)
-- second (`local_time`, `local_datetime`, `offset_datetime`)
-- microsecond (`local_time`, `local_datetime`, `offset_datetime`)
-- hour\_offset (`offset_datetime`)
-- minute\_offset (`offset_datetime`)
-
-## Nested Tables
-If you want to look up things in nested tables, you can chain the query directly
-through the `node_view` and use a map function to directly get the final data of
-your use.
-
-```cpp
-auto author = config["owner"]["name"].value_or(""sv); // "Tom Preston-Werner"
-
-auto dob = config["owner"]["dob"].map<offset_date_time>([](const auto &val) {
-    return val.year * 10000 + val.month * 100 + val.day;
-}).value(); // 19790527
-```
-
-## Arrays of Values
-similarly to `toml::table`, you can access the `node` of a table using `[]`
-operator. The are also two methods provided for convinience: `collect` and
-`map_collect`.
-
-```cpp
-
-// "gamma"sv
-auto gamma = view["clients"]["data"][0][0].value_or(""sv);
-// std::vector{"gamma"sv, "delta"sv}
-auto data0 = view["clients"]["data"][0].collect<std::string_view>();
-// std::vector{8000, 8000, 8001}
-auto ports = view["database"]["ports"].map_collect<int>([](const auto &val) {
-                                                            return val - 1;
-                                                        });
-```
-
-## Arrays of Tables
-Suppose you had a configuration file like the following:
-
-```toml
-[[table-array]]
-key1 = "hello"
-
-[[table-array]]
-key1 = "can you hear me"
-```
-
-Arrays of tables are represented as a separate type in `cpptoml`. They can
-be obtained like so:
-
-```cpp
-auto config = cpptoml::parse_file("config.toml");
-
-auto tarr = config->get_table_array("table-array");
-
-for (const auto& table : *tarr)
-{
-    // *table is a cpptoml::table
-    auto key1 = table->get_as<std::string>("key1");
-}
 ```
 
 ## More Examples
