@@ -42,6 +42,19 @@ public:
         return data_;
     }
 
+    template <typename U, typename F, typename V = std::invoke_result_t<F, const U &>>
+    std::optional<V> map(F f) const
+    {
+        if (const auto val = node::value<U>())
+        {
+            return {f(val.value())};
+        }
+        else
+        {
+            return {};
+        }
+    }
+
 private:
     T data_;
 
@@ -60,5 +73,6 @@ std::shared_ptr<value<typename value_type_traits<T>::type>> make_value(T &&val)
     using enabler = typename value_type::make_shared_enabler;
     return std::make_shared<value_type>(enabler{}, std::forward<T>(val));
 }
+
 TOML_NAMESPACE_END
 } // namespace toml

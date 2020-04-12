@@ -42,7 +42,7 @@ public:
 
     base_type type() const noexcept
     {
-        return is_table_array() ? base_type::TableArray : type();
+        return is_table_array() ? base_type::TableArray : node::type();
     }
 
     iterator begin() noexcept
@@ -149,6 +149,34 @@ public:
         return nodes_.back();
     }
 
+    template <typename T>
+    std::vector<T> collect() const
+    {
+        std::vector<T> result;
+        for (const auto &n : nodes_)
+        {
+            if (const auto val = n->value<T>())
+            {
+                result.emplace_back(val.value());
+            }
+        }
+        return result;
+    }
+
+    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>>
+    std::vector<U> map_collect(F f) const
+    {
+        std::vector<U> result;
+        for (const auto &n : nodes_)
+        {
+            if (const auto val = n->value<T>())
+            {
+                result.emplace_back(f(val.value()));
+            }
+        }
+        return result;
+    }
+
     void push_back(std::shared_ptr<node> &&n)
     {
         nodes_.emplace_back(n);
@@ -203,66 +231,6 @@ private:
     array &operator=(const array &obj) = delete;
 
     /*
-    /// \brief	Appends a new value to the end of the array.
-    ///
-    /// \detail \cpp
-    /// auto arr = toml::array{ 1, 2 };
-    ///	arr.push_back(3);
-    ///	arr.push_back(4.0);
-    ///	arr.push_back(toml::array{ 5, "six"sv });
-    /// std::cout << arr << std::endl;
-    ///
-    /// \ecpp
-    ///
-    /// \out
-    /// [1, 2, 3, 4.0, [5, "six"]]
-    /// \eout
-    ///
-    /// \tparam	U		One of the TOML value types (or a type promotable to one).
-    /// \param 	val		The value being added.
-    ///
-    /// \returns A reference to the newly-constructed value node.
-    template <typename U>
-    decltype(auto) push_back(U &&val) noexcept
-    {
-        auto nde = impl::make_node(std::forward<U>(val));
-        nodes_.emplace_back(nde);
-        return *nde;
-    }
-
-    /// \brief	Emplaces a new value at the end of the array.
-    ///
-    /// \detail \cpp
-    /// auto arr = toml::array{ 1, 2 };
-    ///	arr.emplace_back<toml::array>(3, "four"sv);
-    /// std::cout << arr << std::endl;
-    ///
-    /// \ecpp
-    ///
-    /// \out
-    /// [1, 2, [3, "four"]]
-    /// \eout
-    ///
-    /// \tparam	U		One of the TOML value types.
-    /// \tparam	V		Value constructor argument types.
-    /// \param 	args	Arguments to forward to the value's constructor.
-    ///
-    /// \returns A reference to the newly-constructed value node.
-    ///
-    /// \remarks There is no difference between push_back and emplace_back
-    /// 		 For trivial value types (floats, ints, bools).
-    template <typename U, typename... V>
-    decltype(auto) emplace_back(V &&... args) noexcept
-    {
-        using type = impl::unwrapped<U>;
-        static_assert(
-            impl::is_value_or_node<type>,
-            "Emplacement type parameter must be one of the basic value types, a toml::table, or a toml::array");
-
-        auto nde = new impl::node_of<type>{std::forward<V>(args)...};
-        nodes_.emplace_back(nde);
-        return *nde;
-    }
 
     /// \brief	Gets the node at a specific index.
     ///
@@ -295,45 +263,6 @@ private:
     /// \returns	A pointer to the node at the specified index if one existed, or nullptr.
     [[nodiscard]] const node *get(size_t index) const noexcept;
 
-    /// \brief	Gets the node at a specific index if it is a particular type.
-    ///
-    /// \detail \cpp
-    /// auto arr = toml::array{ 42, "is the meaning of life, apparently."sv };
-    /// if (auto val = arr.get_as<int64_t>(0))
-    ///		std::cout << "node [0] was an integer with value "sv << **val << std::endl;
-    ///
-    /// \ecpp
-    ///
-    /// \out
-    /// node [0] was an integer with value 42
-    /// \eout
-    ///
-    /// \tparam	T	The node's type.
-    /// \param 	index	The node's index.
-    ///
-    /// \returns	A pointer to the selected node if it existed and was of the specified type, or nullptr.
-    template <typename T>
-    [[nodiscard]] impl::node_of<T> *get_as(size_t index) noexcept
-    {
-        if (auto val = get(index))
-            return val->as<T>();
-        return nullptr;
-    }
-
-    /// \brief	Gets the node at a specific index if it is a particular type (const overload).
-    ///
-    /// \tparam	T	The node's type.
-    /// \param 	index	The node's index.
-    ///
-    /// \returns	A pointer to the selected node if it existed and was of the specified type, or nullptr.
-    template <typename T>
-    [[nodiscard]] const impl::node_of<T> *get_as(size_t index) const noexcept
-    {
-        if (auto val = get(index))
-            return val->as<T>();
-        return nullptr;
-    }
-
     void preinsertion_resize(size_t idx, size_t count) noexcept;
 
     template <typename T>
@@ -363,25 +292,6 @@ private:
     [[nodiscard]] size_t total_leaf_count() const noexcept;
 
 public:
-    /// \brief	Initializer list equality operator.
-    template <typename T>
-    [[nodiscard]] friend bool operator==(const array &lhs, const std::initializer_list<T> &rhs) noexcept
-    {
-        return container_equality(lhs, rhs);
-    }
-#ifndef DOXYGEN
-    TOML_ASYMMETRICAL_EQUALITY_OPS(const array &, const std::initializer_list<T> &, template <typename T>)
-#endif
-
-    /// \brief	Vector equality operator.
-    template <typename T>
-    [[nodiscard]] friend bool operator==(const array &lhs, const std::vector<T> &rhs) noexcept
-    {
-        return container_equality(lhs, rhs);
-    }
-#ifndef DOXYGEN
-    TOML_ASYMMETRICAL_EQUALITY_OPS(const array &, const std::vector<T> &, template <typename T>)
-#endif
 
     template <typename Char>
     friend std::basic_ostream<Char> &operator<<(std::basic_ostream<Char> &, const array &);

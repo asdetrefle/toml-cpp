@@ -52,7 +52,7 @@ public:
     template <class T>
     std::shared_ptr<toml::value<T>> as_value()
     {
-        if (type() == base_type_traits<T>::vale)
+        if (type() == base_type_traits<T>::value)
         {
             return std::static_pointer_cast<toml::value<T>>(shared_from_this());
         }
@@ -98,21 +98,6 @@ public:
             return nullptr;
         }
     }
-
-    /**
-     * Determines if the given TOML element is an array of tables.
-     */
-
-    /**
-     * Converts the TOML element into a table array.
-     
-    std::shared_ptr<table_array> as_table_array()
-    {
-        if (is_table_array())
-            return std::static_pointer_cast<table_array>(shared_from_this());
-        return nullptr;
-    }
-    */
 
     template <typename T>
     inline std::optional<T> value() const noexcept
@@ -164,7 +149,7 @@ public:
         {
             if constexpr (value_type_traits<T>::value == base_type::Boolean)
             {
-                return {*as_value<bool>()};
+                return {as_value<bool>()->get()};
             }
             else
             {
@@ -175,7 +160,7 @@ public:
         {
             if constexpr (value_type_traits<T>::value == base_type::LocalDate)
             {
-                return {*as_value<local_date>()};
+                return {as_value<local_date>()->get()};
             }
             else
             {
@@ -186,7 +171,7 @@ public:
         {
             if constexpr (value_type_traits<T>::value == base_type::LocalTime)
             {
-                return {static_cast<T>(*as_value<local_time>())};
+                return {as_value<local_time>()->get()};
             }
             else
             {
@@ -197,7 +182,7 @@ public:
         {
             if constexpr (value_type_traits<T>::value == base_type::LocalDateTime)
             {
-                return {static_cast<T>(*as_value<local_date_time>())};
+                return {as_value<local_date_time>()->get()};
             }
             else
             {
@@ -208,7 +193,7 @@ public:
         {
             if constexpr (value_type_traits<T>::value == base_type::OffsetDateTime)
             {
-                return {static_cast<T>(*as_value<offset_date_time>())};
+                return {as_value<offset_date_time>()->get()};
             }
             else
             {
@@ -250,31 +235,8 @@ protected:
     node(base_type t)
         : type_(t) {}
 
-    // node(node &&other) noexcept
-    //     : source_{std::move(other.source_)}
-    // {
-    //     other.source_.begin = {};
-    //     other.source_.end = {};
-    // }
-    // node &operator=(node &&rhs) noexcept
-    // {
-    //     source_ = std::move(rhs.source_);
-    //     rhs.source_.begin = {};
-    //     rhs.source_.end = {};
-    //     return *this;
-    // }
-
-    // template <typename T>
-    //     [[nodiscard]] inline impl::node_of<T> &
-    //     ref_cast() &
-    //     noexcept
-    // {
-    //     return *reinterpret_cast<impl::node_of<T> *>(this);
-    // }
-
 private:
     base_type type_{base_type::None};
-    //source_region source_{};
 };
 
 TOML_NAMESPACE_END

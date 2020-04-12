@@ -38,8 +38,6 @@ class array;
 class table;
 
 class node;
-
-template <typename T>
 class node_view;
 
 template <typename T>
@@ -52,8 +50,8 @@ TOML_NAMESPACE_END
 #include "toml/toml_base.h"
 #include "toml/toml_date_time.h"
 #include "toml/toml_node.h"
-#include "toml/toml_node_view.h"
 #include "toml/toml_value.h"
 #include "toml/toml_array.h"
 #include "toml/toml_table.h"
+#include "toml/toml_node_view.h"
 #include "toml/toml_parser.h"

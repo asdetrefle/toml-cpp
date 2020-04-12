@@ -61,11 +61,11 @@ public:
         return !is_error_;
     }
 
-    node_view<node> ok() noexcept
+    node_view ok() noexcept
     {
         if (is_ok())
         {
-            return std::get<node_view<node>>(result_);
+            return std::get<node_view>(result_);
         }
         else
         {
@@ -85,7 +85,7 @@ public:
         }
     }
 
-    operator node_view<node>() noexcept
+    operator node_view() noexcept
     {
         return ok();
     }
@@ -97,7 +97,7 @@ public:
 
     parse_result(std::shared_ptr<table> &&tbl) noexcept
         : is_error_{false},
-          result_{std::in_place_type<node_view<node>>, tbl} {}
+          result_{std::in_place_type<node_view>, tbl} {}
 
     parse_result(parse_error &&err) noexcept
         : is_error_{true},
@@ -105,22 +105,21 @@ public:
 
 private:
     bool is_error_;
-    std::variant<node_view<node>, parse_error> result_;
+    std::variant<node_view, parse_error> result_;
 };
 
 /**
  * Helper object for consuming expected characters.
  */
-template <class OnError>
 class consumer
 {
 public:
     consumer(std::string::iterator &it,
              const std::string::iterator &end,
-             OnError &&on_error)
+             std::function<void()> on_error)
         : it_(it),
           end_(end),
-          on_error_(std::forward<OnError>(on_error)) {}
+          on_error_(on_error) {}
 
     void operator()(char c)
     {
@@ -155,24 +154,11 @@ public:
         return val;
     }
 
-    void error()
-    {
-        on_error_();
-    }
-
 private:
     std::string::iterator &it_;
     const std::string::iterator &end_;
-    OnError on_error_;
+    std::function<void()> on_error_;
 };
-
-template <class OnError>
-consumer<OnError> make_consumer(std::string::iterator &it,
-                                const std::string::iterator &end,
-                                OnError &&on_error)
-{
-    return consumer<OnError>(it, end, std::forward<OnError>(on_error));
-}
 
 // replacement for std::getline to handle incorrectly line-ended files
 // https://stackoverflow.com/questions/6089231/getting-std-ifstream-to-handle-lf-cr-and-crlf
@@ -437,7 +423,7 @@ private:
         key_part_handler(parse_key(it, end, key_end, key_part_handler));
 
         // consume the last "]]"
-        auto eat = make_consumer(it, end, [this]() {
+        auto eat = consumer(it, end, [&]() {
             throw_parse_exception("Unterminated table array name");
         });
         eat(']');
@@ -639,10 +625,9 @@ private:
     {
         if (it == end)
         {
-            throw_parse_exception("Failed to parse value type 1");
+            return numeric_type::None;
         }
-
-        if (is_time(it, end))
+        else if (is_time(it, end))
         {
             return numeric_type::LocalTime;
         }
@@ -658,7 +643,7 @@ private:
         }
         else
         {
-            throw_parse_exception("Failed to parse value type");
+            return numeric_type::None;
         }
     }
 
@@ -671,7 +656,7 @@ private:
             ++check_it;
 
         if (check_it == end)
-            throw_parse_exception("Malformed number");
+            return numeric_type::None;
 
         if (*check_it == 'i' || *check_it == 'n')
             return numeric_type::Float;
@@ -1146,8 +1131,8 @@ private:
     std::shared_ptr<value<bool>> parse_bool(std::string::iterator &it,
                                             const std::string::iterator &end)
     {
-        auto eat = make_consumer(it, end, [this]() {
-            throw_parse_exception("Attempted to parse invalid boolean value");
+        auto eat = consumer(it, end, [&]() {
+            throw_parse_exception("attempt to parse invalid boolean value");
         });
 
         if (*it == 't')
@@ -1160,9 +1145,13 @@ private:
             eat("false");
             return make_value<bool>(false);
         }
-
-        eat.error();
-        return nullptr;
+        else
+        {
+            // should be unreachable
+            throw_parse_exception("attempt to parse invalid boolean value: " +
+                                  std::string{it, end});
+            return nullptr;
+        }
     }
 
     std::string::iterator find_end_of_array_element(std::string::iterator it,
@@ -1238,8 +1227,9 @@ private:
     {
         auto time_end = find_end_of_time(it, end);
 
-        auto eat = make_consumer(
-            it, time_end, [&]() { throw_parse_exception("Malformed time"); });
+        auto eat = consumer(it, time_end, [&]() {
+            throw_parse_exception("Malformed time");
+        });
 
         local_time ltime;
 
@@ -1277,8 +1267,9 @@ private:
     {
         auto date_end = find_end_of_date(it, end);
 
-        auto eat = make_consumer(
-            it, date_end, [&]() { throw_parse_exception("Malformed date"); });
+        auto eat = consumer(it, date_end, [&]() {
+            throw_parse_exception("Malformed date");
+        });
 
         local_date ldate;
         ldate.year = eat.eat_digits(4);
@@ -1292,9 +1283,7 @@ private:
 
         eat.eat_either('T', ' ');
 
-        local_date_time ldt;
-        static_cast<local_date &>(ldt) = ldate;
-        static_cast<local_time &>(ldt) = read_time(it, date_end);
+        local_date_time ldt(std::move(ldate), read_time(it, date_end));
 
         if (it == date_end)
             return make_value(std::move(ldt));
@@ -1310,10 +1299,11 @@ private:
             ++it;
 
             hoff = eat.eat_digits(2);
-            dt.hour_offset = (plus) ? hoff : -hoff;
             eat(':');
             moff = eat.eat_digits(2);
-            dt.minute_offset = (plus) ? moff : -moff;
+
+            static_cast<time_offset &>(dt) = time_offset((plus) ? hoff : -hoff,
+                                                         (plus) ? moff : -moff);
         }
         else if (*it == 'Z')
         {
@@ -1329,15 +1319,10 @@ private:
     std::shared_ptr<node> parse_array(std::string::iterator &it,
                                       std::string::iterator &end)
     {
-        // this gets ugly because of the "homogeneity" restriction:
-        // arrays can either be of only one type, or contain arrays
-        // (each of those arrays could be of different types, though)
-        //
-        // because of the latter portion, we don't really have a choice
-        // but to represent them as arrays of base values...
-        ++it;
+        // toml v1.0.0-rc.1 removed the "homogeneity" restriction:
+        // arrays can either be homogeneous, or contain mixed types
 
-        // ugh---have to read the first value to determine array type...
+        ++it;
         skip_whitespace_and_comments(it, end);
 
         auto arr = make_array();
@@ -1451,10 +1436,11 @@ private:
         auto len = std::distance(it, date_end);
 
         if (len < 10)
-            return {};
+            return numeric_type::None;
+        ;
 
         if (it[4] != '-' || it[7] != '-')
-            return {};
+            return numeric_type::None;
 
         if (len >= 19 && (it[10] == 'T' || it[10] == ' ') && is_time(it + 11, date_end))
         {
@@ -1477,7 +1463,7 @@ private:
     std::istream &input_;
     std::string line_;
     std::size_t line_number_ = 0;
-}; // namespace toml
+};
 
 parse_result parse_file(const std::string &file_path)
 {
@@ -1498,6 +1484,20 @@ parse_result parse_file(const std::string &file_path)
         {
             return {std::move(e)};
         }
+    }
+}
+
+parse_result parse(const std::string &source)
+{
+    try
+    {
+        std::stringstream source_stream{source};
+        parser p{source_stream};
+        return {p.parse()};
+    }
+    catch (parse_error e)
+    {
+        return {std::move(e)};
     }
 }
 TOML_NAMESPACE_END
