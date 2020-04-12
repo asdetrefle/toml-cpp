@@ -63,11 +63,11 @@ auto dob = config["owner"]["dob"].map<offset_date_time>([](const auto &val) {
  * operator. The are also `collect` and `map_collect` provided for convenience:
  * */
 
-auto gamma = view["clients"]["data"][0][0].value_or(""sv);
+auto gamma = config["clients"]["data"][0][0].value_or(""sv);
 // std::vector{"gamma"sv, "delta"sv}
-auto data0 = view["clients"]["data"][0].collect<std::string_view>();
+auto data0 = config["clients"]["data"][0].collect<std::string_view>();
 // std::vector{8000, 8000, 8001}
-auto ports = view["database"]["ports"].map_collect<int>([](const auto &val) {
+auto ports = config["database"]["ports"].map_collect<int>([](const auto &val) {
                                                             return val - 1;
                                                         });
 
