@@ -1,14 +1,14 @@
-# toml
-A header-only C++17 library for parsing [TOML][toml] configuration files.
+# tominal - Minimal TOML parser and writer
+A header-only C++17 library for parsing and writing [TOML][toml] configuration files.
 
 Targets: [TOML v1.0.0-rc.1][currver] as of April 2020.
 
 ## Motivation:
 
-This projected was previously a fork of [cpptoml][cpptoml], but rewritten according to the new released standard [v1.0.0-rc.1][currver]. This includes support for features like mixed type arrays.
+This projected was previously a fork of [cpptoml][cpptoml], but rewritten (partially) according to the new released standard [v1.0.0-rc.1][currver]. This includes support for features like mixed type arrays.
 
 Many of the concepts and implementation are brought from [toml++][tomlplusplus]. Being an awesome
-C++ library for TOML, it seems a bit heavy and complicated for my use case. [cpptoml][cpptoml] was perfect but I really want to add the idea of `node_view` from [toml++][tomlplusplus] so the user can chain `[]` operator to query nested tables. So I decide to rewrite (some part of) [cpptoml][cpptoml] but still keep it minimal. Any contributions or suggestions are very welcome!
+C++ library for TOML, it seems a bit heavy and complicated for my use case. [cpptoml][cpptoml] was perfect but I really want to add the idea of `node_view` from [toml++][tomlplusplus] so the user can chain `[]` operator to query nested tables and arrays. So I decide to rewrite [cpptoml][cpptoml] but still keep it minimal. Any contributions or suggestions are very welcome!
 
 C++ Alternatives:
 - [toml++][tomlplusplus] is a C++17/20 implementation of a TOML parser, which also supports v1.0.0-rc.1 as of writing.
@@ -18,7 +18,7 @@ C++ Alternatives:
 ## Build Status
 
 ## Example Usage
-To parse a configuration file from a file, you can do the following:
+To parse a TOML document from a file, you can do the following:
 
 ```cpp
 #include "toml/toml.h"
@@ -76,7 +76,7 @@ and now it is much easier to get the same vector:
 auto v = config["clients"][0]["data"][1].collect<int>();
 ```
 
-toml has extended support for dates and times beyond the TOML v0.4.0
+tominal has extended support for dates and times beyond the TOML v0.4.0
 spec. Specifically, it supports
 
 - Local Date (`local_date`), which simply represents a date and lacks any time
@@ -100,7 +100,7 @@ Here are the fields of the date/time objects in cpptoml:
 - minute\_offset (`offset_date_time`)
 
 
-## Test Results
+## Test Results - TODO
 
 From [the toml-test suite][toml-test]:
 
