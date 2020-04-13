@@ -12,8 +12,8 @@ TEST(toml_test, parse_example)
     auto view = parse_file("../examples/example.toml").ok();
 
     EXPECT_TRUE(bool(view));
-    EXPECT_EQ(view["title"].value_or(""sv), "TOML Example");
-    EXPECT_EQ(view["owner"]["name"].value_or(""sv), "Tom Preston-Werner");
+    EXPECT_EQ(view["title"].value_or(""sv), "TOML Example"sv);
+    EXPECT_EQ(view["owner"]["name"].value_or(""sv), "Tom Preston-Werner"sv);
 
     EXPECT_TRUE(view["owner"]["dob"].map<offset_date_time>([](const auto &val) {
                                         return val.year == 1979 &&
@@ -28,8 +28,8 @@ TEST(toml_test, parse_example)
                                             })
                      .value());
 
-    EXPECT_EQ(view["clients"]["data"][0][0].value_or(""sv), "gamma"sv);
-    EXPECT_EQ(view["clients"]["data"][0].collect<std::string_view>(),
+    EXPECT_EQ(view["clients"][0]["data"][0][0].value_or(""sv), "gamma"sv);
+    EXPECT_EQ(view["clients"][0]["data"][0].collect<std::string_view>(),
               (std::vector{"gamma"sv, "delta"sv}));
     EXPECT_EQ(view["database"]["ports"].map_collect<int>(
                   [](const auto &val) {
@@ -63,7 +63,5 @@ TEST(toml_test, parse_array)
                       return val.substr(0, 2);
                   }),
               (std::vector{"ti"sv, "li"sv, "pu"sv}));
-
-    time_offset to{120};
 }
 } // namespace

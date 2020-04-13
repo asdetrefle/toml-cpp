@@ -134,7 +134,7 @@ public:
         return nodes_[index];
     }
 
-    std::shared_ptr<node> operator[](size_t index) const
+    std::shared_ptr<const node> operator[](size_t index) const
     {
         return nodes_[index];
     }
@@ -149,15 +149,32 @@ public:
         return nodes_.back();
     }
 
-    template <typename T>
-    std::vector<T> collect() const
+    template <typename T, typename U = typename value_type_traits<T>::type>
+    std::vector<U> collect() const
     {
-        std::vector<T> result;
+        std::vector<U> result;
         for (const auto &n : nodes_)
         {
-            if (const auto val = n->value<T>())
+            if constexpr (is_value_promotable<T>)
             {
-                result.emplace_back(val.value());
+                if (const auto val = n->value<U>())
+                {
+                    result.emplace_back(val.value());
+                }
+            }
+            else if constexpr (std::is_same_v<T, array>)
+            {
+                if (const auto val = n->as_array())
+                {
+                    result.emplace_back(std::move(val));
+                }
+            }
+            else if constexpr (std::is_same_v<T, table>)
+            {
+                if (const auto val = n->as_table())
+                {
+                    result.emplace_back(std::move(val));
+                }
             }
         }
         return result;
@@ -183,7 +200,7 @@ public:
     }
 
     template <class T>
-    void emplace_back(std::enable_if_t<toml::is_value<T>, T> &&val)
+    void emplace_back(std::enable_if_t<toml::is_value_promotable<T>, T> &&val)
     {
         nodes_.emplace_back(make_value(std::forward<T>(val)));
     }
@@ -224,9 +241,6 @@ private:
         : node(base_type::Array),
           nodes_{begin, end} {}
 
-    //array(array &&other) noexcept
-    //    : {}
-
     array(const array &obj) = delete;
     array &operator=(const array &obj) = delete;
 
@@ -264,30 +278,6 @@ private:
     [[nodiscard]] const node *get(size_t index) const noexcept;
 
     void preinsertion_resize(size_t idx, size_t count) noexcept;
-
-    template <typename T>
-    [[nodiscard]] static bool container_equality(const array &lhs, const T &rhs) noexcept
-    {
-        using elem_t = std::remove_const_t<typename T::value_type>;
-        static_assert(
-            impl::is_value_or_promotable<elem_t>,
-            "Container element type must be (or be promotable to) one of the TOML value types");
-
-        if (lhs.size() != rhs.size())
-            return false;
-        if (rhs.size() == 0_sz)
-            return true;
-
-        size_t i{};
-        for (auto &list_elem : rhs)
-        {
-            const auto elem = lhs.get_as<impl::promoted<elem_t>>(i++);
-            if (!elem || *elem != list_elem)
-                return false;
-        }
-
-        return true;
-    }
 
     [[nodiscard]] size_t total_leaf_count() const noexcept;
 

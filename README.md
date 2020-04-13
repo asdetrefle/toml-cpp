@@ -5,27 +5,15 @@ Targets: [TOML v1.0.0-rc.1][currver] as of April 2020.
 
 ## Motivation:
 
-This projected was previously a fork of [cpptoml][cpptoml], but rewritten
-according to the new released standard [v1.0.0-rc.1][currver]. This 
-includes support for features like mixed type arrays.
+This projected was previously a fork of [cpptoml][cpptoml], but rewritten according to the new released standard [v1.0.0-rc.1][currver]. This includes support for features like mixed type arrays.
 
-Many of the concepts and implementation are brought from [toml++][tomlplusplus]
-which seems a bit heavy and complicated for my use case. [cpptoml][cpptoml] was
-perfect while some features from [toml++][tomlplusplus] are really attractive, 
-for example the idea of `node_view` for chaining query of nested tables. So I 
-decide to change a bit [cpptoml][cpptoml] and make it what I think is best. 
-But any contributions or suggestions are very welcome!
+Many of the concepts and implementation are brought from [toml++][tomlplusplus]. Being an awesome
+C++ library for TOML, it seems a bit heavy and complicated for my use case. [cpptoml][cpptoml] was perfect but I really want to add the idea of `node_view` from [toml++][tomlplusplus] so the user can chain `[]` operator to query nested tables. So I decide to rewrite (some part of) [cpptoml][cpptoml] but still keep it minimal. Any contributions or suggestions are very welcome!
 
 C++ Alternatives:
-- [toml++][tomlplusplus] is a C++17/20 implementation of a TOML parser,
-  which also supports v1.0.0-rc.1 as of writing.
+- [toml++][tomlplusplus] is a C++17/20 implementation of a TOML parser, which also supports v1.0.0-rc.1 as of writing.
+- [toml11][toml11] is a C++11/14/17 implementation of a TOML parser which supports v1.0.0-rc.1 as well.
 - [cpptoml][cpptoml] is the former version of this project. It supports v0.5.0 currently.
-- [Boost.toml][boost.toml] is an implementation of a TOML parser using
-  the Boost library. As of December 2019, it supports v0.5.0 as well.
-- [ctoml][ctoml] is a C++11 implementation of a TOML parser, but only
-  supports v0.2.0.
-- [tinytoml][tinytoml] is a C++11 implementation of a TOML parser, which
-  also supports v0.4.0 as of November 2015.
 
 ## Build Status
 
@@ -56,24 +44,36 @@ auto author = config["owner"]["name"].value_or(""sv); // "Tom Preston-Werner"
 // empty `std::optional<T>` will be mapped if node does not exist
 auto dob = config["owner"]["dob"].map<offset_date_time>([](const auto &val) {
     return val.year * 10000 + val.month * 100 + val.day;
-}); // std::optional<19790527>
+}); // std::optional{19790527}
 
-/** ## Arrays of Values
+/** ## Arrays of Values / Tables
  * Similarly to `toml::table`, you can access the `node` of a table by `[]`
  * operator. The are also `collect` and `map_collect` provided for convenience:
  * */
 
-auto gamma = config["clients"]["data"][0][0].value_or(""sv);
+auto gamma = config["clients"][0]["data"][0][0].value_or(""sv);
 // std::vector{"gamma"sv, "delta"sv}
-auto data0 = config["clients"]["data"][0].collect<std::string_view>();
+auto data0 = config["clients"][0]["data"][0].collect<std::string_view>();
 // std::vector{8000, 8000, 8001}
 auto ports = config["database"]["ports"].map_collect<int>([](const auto &val) {
                                                             return val - 1;
                                                         });
+```
 
-/**
- * ## Arrays of Tables is the same as arrays
- * /*
+A problem I encountered with `cpptoml` was that I was not able to dereference
+an `rvalue` table or array:
+
+```cpp
+// This will fail with cpptoml
+for (auto& i : *config->get_qualified_array_of<array>("clients.data"))
+{
+    auto v = *(i->at(1)->get_array_of<int64_t>());
+}
+```
+
+and now it is much easier to get the same vector:
+```cpp
+auto v = config["clients"][0]["data"][1].collect<int>();
 ```
 
 toml has extended support for dates and times beyond the TOML v0.4.0
@@ -136,8 +136,7 @@ then serialize it to a stream.
 [toml]: https://github.com/toml-lang/toml
 [toml-test]: https://github.com/BurntSushi/toml-test
 [toml-test-fork]: https://github.com/skystrife/toml-test
-[ctoml]: https://github.com/evilncrazy/ctoml
-[libtoml]: https://github.com/ajwans/libtoml
+[toml11]: https://github.com/ToruNiina/toml11
 [tinytoml]: https://github.com/mayah/tinytoml
 [boost.toml]: https://github.com/ToruNiina/Boost.toml
 [tomlplusplus]: https://github.com/marzer/tomlplusplus

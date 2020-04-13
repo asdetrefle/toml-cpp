@@ -17,6 +17,8 @@ public:
 
     virtual ~node() noexcept = default;
 
+    node_view view() const noexcept;
+
     virtual base_type type() const noexcept
     {
         return type_;
@@ -87,6 +89,18 @@ public:
         }
     }
 
+    std::shared_ptr<const array> as_array() const
+    {
+        if (is_array())
+        {
+            return std::static_pointer_cast<const toml::array>(shared_from_this());
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
     std::shared_ptr<table> as_table()
     {
         if (is_table())
@@ -99,11 +113,23 @@ public:
         }
     }
 
+    std::shared_ptr<const table> as_table() const
+    {
+        if (is_table())
+        {
+            return std::static_pointer_cast<const toml::table>(shared_from_this());
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
     template <typename T>
     inline std::optional<T> value() const noexcept
     {
         static_assert(toml::is_value_promotable<T>,
-                      "Value type must be one of the TOML value types (or string_view)");
+                      "value type must be one of the TOML value types (or string_view)");
 
         switch (type())
         {
@@ -208,17 +234,10 @@ public:
     template <typename T>
     inline auto value_or(T &&default_value) const noexcept
     {
-        static_assert(toml::is_value_promotable<remove_cvref_t<T>>,
-                      "Default value type must be (or be promotable to) one of the TOML value types");
+        static_assert(is_value_promotable<std::decay_t<T>>,
+                      "default value must be of (or be promotable to) one of the TOML types");
 
-        using toml_type = typename value_type_traits<remove_cvref_t<T>>::type;
-
-        using return_type = typename std::conditional_t<std::is_same_v<toml_type, std::string>,
-                                                        std::conditional_t<std::is_same_v<remove_cvref_t<T>, std::string>,
-                                                                           std::string,
-                                                                           std::string_view>,
-                                                        toml_type>;
-
+        using return_type = typename value_type_traits<std::decay_t<T>>::type;
         if (auto val = this->value<return_type>())
         {
             return *val;
@@ -229,6 +248,9 @@ public:
         }
     }
 
+    template <class Visitor, class... Args>
+    void accept(Visitor &&visitor, Args &&... args) const;
+
 protected:
     node() noexcept = default;
 
@@ -238,6 +260,57 @@ protected:
 private:
     base_type type_{base_type::None};
 };
+
+template <class... Ts>
+struct value_accept;
+
+template <>
+struct value_accept<>
+{
+    template <class Visitor, class... Args>
+    static void accept(const node &, Visitor &&, Args &&...) {}
+};
+
+template <class T, class... Ts>
+struct value_accept<T, Ts...>
+{
+    template <class Visitor, class... Args>
+    static void accept(const node &b, Visitor &&visitor, Args &&... args)
+    {
+        if (auto v = b.as_value<T>())
+        {
+            visitor.visit(*v, std::forward<Args>(args)...);
+        }
+        else
+        {
+            value_accept<Ts...>::accept(b, std::forward<Visitor>(visitor),
+                                        std::forward<Args>(args)...);
+        }
+    }
+};
+
+template <class Visitor, class... Args>
+void node::accept(Visitor &&visitor, Args &&... args) const
+{
+    if (is_value())
+    {
+        using value_acceptor = value_accept<std::string, int64_t, double, bool, local_date,
+                                            local_time, local_date_time, offset_date_time>;
+
+        value_acceptor::accept(*this, std::forward<Visitor>(visitor),
+                               std::forward<Args>(args)...);
+    }
+    else if (is_table())
+    {
+        visitor.visit(static_cast<const toml::table &>(*as_table()),
+                      std::forward<Args>(args)...);
+    }
+    else if (is_array())
+    {
+        visitor.visit(static_cast<const toml::array &>(*as_array()),
+                      std::forward<Args>(args)...);
+    }
+}
 
 TOML_NAMESPACE_END
 } // namespace toml

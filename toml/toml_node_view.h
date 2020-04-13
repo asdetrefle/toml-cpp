@@ -14,8 +14,8 @@ class node_view final
 public:
     node_view() noexcept = default;
 
-    node_view(std::shared_ptr<node> &&node) noexcept
-        : node_{node} {}
+    node_view(std::shared_ptr<node> &&n) noexcept
+        : node_{n} {}
 
     explicit operator bool() const noexcept
     {
@@ -25,6 +25,11 @@ public:
     base_type type() const noexcept
     {
         return node_ ? node_->type() : base_type::None;
+    }
+
+    const node &get() const noexcept
+    {
+        return *node_;
     }
 
     bool is_value() const noexcept
@@ -133,8 +138,8 @@ public:
         }
     }
 
-    template <typename T>
-    std::vector<T> collect() const
+    template <typename T, typename U = typename value_type_traits<T>::type>
+    std::vector<U> collect() const
     {
         if (auto arr = this->as_array())
         {
@@ -159,26 +164,23 @@ public:
         }
     }
 
-    /*
-    /// \brief	Invokes a visitor on the viewed node based on its concrete type.
-    ///
-    /// \remarks Has no effect if the view does not reference a node.
-    ///
-    /// \see node::visit()
-    template <typename FUNC>
-    decltype(auto) visit(FUNC &&visitor) const TOML_MAY_THROW_UNLESS(visit_is_nothrow<FUNC &&>)
+    template <class Visitor, class... Args>
+    void accept(Visitor &&visitor, Args &&... args) const
     {
-        using return_type = decltype(node_->visit(std::forward<FUNC>(visitor)));
         if (node_)
-            return node_->visit(std::forward<FUNC>(visitor));
-        if constexpr (!std::is_void_v<return_type>)
-            return return_type{};
+        {
+            return node_->accept(std::forward<Visitor>(visitor), std::forward<Args>(args)...);
+        }
     }
-    */
 
 private:
     std::shared_ptr<node> node_;
 };
+
+node_view node::view() const noexcept
+{
+    return node_view(std::const_pointer_cast<node>(shared_from_this()));
+}
 
 TOML_NAMESPACE_END
 } // namespace toml

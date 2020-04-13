@@ -120,7 +120,7 @@ struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<T,
                                                                   uint16_t,
                                                                   uint8_t>>>
 {
-    using type = int64_t;
+    using type = T;
     static constexpr auto value = base_type::Integer;
 };
 
@@ -132,14 +132,34 @@ struct value_type_traits<T, typename std::enable_if_t<std::is_floating_point_v<T
 };
 
 template <class T>
-struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<T, std::string_view, const char *>>>
+struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<std::decay_t<T>,
+                                                                  std::string_view,
+                                                                  const char *>>>
 {
-    using type = std::string;
+    using type = std::string_view;
     static constexpr auto value = base_type::String;
 };
 
+template <class T>
+struct value_type_traits<T, typename std::enable_if_t<std::is_same_v<T, table>>>
+{
+    using type = std::shared_ptr<table>;
+    static constexpr auto value = base_type::Table;
+};
+
+template <class T>
+struct value_type_traits<T, typename std::enable_if_t<std::is_same_v<T, array>>>
+{
+    using type = std::shared_ptr<array>;
+    static constexpr auto value = base_type::Array;
+};
+
+#if __cplusplus > 201703
+using remove_cvref_t = std::remove_cvref_t<T>;
+#else
 template <typename T>
 using remove_cvref_t = std::remove_cv_t<std::remove_reference_t<T>>;
+#endif
 
 template <typename T>
 inline constexpr bool is_value_or_node = (base_type_traits<T>::value != base_type::None);
@@ -151,6 +171,8 @@ inline constexpr bool is_value = (base_type_traits<T>::value != base_type::None)
 template <typename T>
 inline constexpr bool is_value_promotable = (value_type_traits<T>::value != base_type::None) &&
                                             static_cast<uint8_t>(value_type_traits<T>::value) < 9;
+
+inline constexpr bool is_char = std::is_same_v<const char (&)[1], const char *>;
 
 template <class U>
 inline std::shared_ptr<value<typename value_type_traits<U>::type>> make_value(U &&val);

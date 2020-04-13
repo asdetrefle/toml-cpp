@@ -28,11 +28,11 @@ enum class base_type : uint8_t
     TableArray,
 };
 
-class local_date;
-class local_time;
-class local_date_time;
-class time_offset;
-class offset_date_time;
+struct local_date;
+struct local_time;
+struct local_date_time;
+struct time_offset;
+struct offset_date_time;
 
 class array;
 class table;
@@ -55,3 +55,4 @@ TOML_NAMESPACE_END
 #include "toml/toml_table.h"
 #include "toml/toml_node_view.h"
 #include "toml/toml_parser.h"
+#include "toml/toml_writer.h"

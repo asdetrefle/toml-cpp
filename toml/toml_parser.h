@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <variant>
 #include "toml_base.h"
+#include "toml_date_time.h"
 #include "toml_table.h"
 #include "toml_node_view.h"
 

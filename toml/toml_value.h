@@ -69,6 +69,8 @@ private:
 template <class T>
 std::shared_ptr<value<typename value_type_traits<T>::type>> make_value(T &&val)
 {
+    static_assert(is_value_promotable<T>,
+                  "make_value type must be of (or be promotable to) one of the TOML types");
     using value_type = value<typename value_type_traits<T>::type>;
     using enabler = typename value_type::make_shared_enabler;
     return std::make_shared<value_type>(enabler{}, std::forward<T>(val));

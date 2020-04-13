@@ -120,6 +120,18 @@ public:
         }
     }
 
+    std::shared_ptr<const node> operator[](std::string_view key) const
+    {
+        if (auto it = map_.find(key); it != map_.end())
+        {
+            return it->second;
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
     // this will overwrite existing node
     template <typename K, typename V, typename = std::enable_if_t<std::is_convertible_v<K &&, std::string_view>>>
     std::pair<iterator, bool> insert_or_assign(K &&key, V &&val) noexcept

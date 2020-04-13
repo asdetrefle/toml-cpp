@@ -56,5 +56,93 @@ struct offset_date_time : local_date_time, time_offset
           time_offset(offset) {}
 };
 
+class fill_guard
+{
+public:
+    fill_guard(std::ostream &os)
+        : os_(os),
+          fill_{os.fill()} {}
+
+    ~fill_guard()
+    {
+        os_.fill(fill_);
+    }
+
+private:
+    std::ostream &os_;
+    std::ostream::char_type fill_;
+};
+
+inline std::ostream &operator<<(std::ostream &os, const local_date &dt)
+{
+    fill_guard g{os};
+    os.fill('0');
+
+    using std::setw;
+    os << setw(4) << static_cast<uint>(dt.year) << '-'
+       << setw(2) << static_cast<uint>(dt.month) << '-'
+       << setw(2) << static_cast<uint>(dt.day);
+
+    return os;
+}
+
+inline std::ostream &operator<<(std::ostream &os, const local_time &ltime)
+{
+    fill_guard g{os};
+    os.fill('0');
+
+    using std::setw;
+    os << setw(2) << static_cast<uint>(ltime.hour) << ':'
+       << setw(2) << static_cast<uint>(ltime.minute) << ':'
+       << setw(2) << static_cast<uint>(ltime.second);
+
+    if (ltime.nanosecond > 0)
+    {
+        os << '.' << setw(9) << ltime.nanosecond;
+    }
+
+    return os;
+}
+
+inline std::ostream &operator<<(std::ostream &os, const time_offset &offset)
+{
+    fill_guard g{os};
+    os.fill('0');
+
+    using std::setw;
+
+    if (offset.minute_offset != 0)
+    {
+        if (offset.minute_offset > 0)
+        {
+            os << '+';
+        }
+        else
+        {
+            os << '-';
+        }
+        auto [hour, minute] = std::div(std::abs(offset.minute_offset), 60);
+        os << setw(2) << hour << ':' << setw(2) << std::abs(minute);
+    }
+    else
+    {
+        os << 'Z';
+    }
+
+    return os;
+}
+
+inline std::ostream &operator<<(std::ostream &os, const local_date_time &dt)
+{
+    return os << static_cast<const local_date &>(dt) << 'T'
+              << static_cast<const local_time &>(dt);
+}
+
+inline std::ostream &operator<<(std::ostream &os, const offset_date_time &dt)
+{
+    return os << static_cast<const local_date_time &>(dt)
+              << static_cast<const time_offset &>(dt);
+}
+
 TOML_NAMESPACE_END
 } // namespace toml

@@ -23,11 +23,13 @@ enabled = true
   ip = "10.0.0.2"
   dc = "eqdc10"
 
-[clients]
-data = [ ["gamma", "delta"], [1, 2] ]
+[[clients]]
+data = [ ["gamma", "delta"], [1, 2]]
+
+[[clients]] # array of tables
 
 # Line breaks are OK when inside arrays
 hosts = [
-  "alpha",
-  "omega"
+  { name = "alpha" }, 
+  "omega", # trailing comma and mixed type both allowd in array
 ]
