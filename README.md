@@ -5,7 +5,7 @@ Targets: [TOML v1.0.0-rc.1][currver] as of April 2020.
 
 ## Motivation:
 
-This projected was previously a fork of [cpptoml][cpptoml], but rewritten (partially) according to the new released standard [v1.0.0-rc.1][currver]. This includes support for features like mixed type arrays.
+This project was previously a fork of [cpptoml][cpptoml], but rewritten (partially) according to the new released standard [v1.0.0-rc.1][currver]. This includes support for features like mixed type arrays.
 
 Many of the concepts and implementation are brought from [toml++][tomlplusplus]. Being an awesome
 C++ library for TOML, it seems a bit heavy and complicated for my use case. [cpptoml][cpptoml] was perfect but I really want to add the idea of `node_view` from [toml++][tomlplusplus] so the user can chain `[]` operator to query nested tables and arrays. So I decide to rewrite [cpptoml][cpptoml] but still keep it minimal. Any contributions or suggestions are very welcome!
