@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <fstream>
+#include <functional>
 #include <optional>
 #include <stdexcept>
 #include <variant>

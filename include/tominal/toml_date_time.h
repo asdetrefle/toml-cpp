@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iomanip>
 #include "toml_base.h"
 
 namespace toml
@@ -79,9 +80,9 @@ inline std::ostream &operator<<(std::ostream &os, const local_date &dt)
     os.fill('0');
 
     using std::setw;
-    os << setw(4) << static_cast<uint>(dt.year) << '-'
-       << setw(2) << static_cast<uint>(dt.month) << '-'
-       << setw(2) << static_cast<uint>(dt.day);
+    os << setw(4) << static_cast<uint16_t>(dt.year) << '-'
+       << setw(2) << static_cast<uint16_t>(dt.month) << '-'
+       << setw(2) << static_cast<uint16_t>(dt.day);
 
     return os;
 }
@@ -92,9 +93,9 @@ inline std::ostream &operator<<(std::ostream &os, const local_time &ltime)
     os.fill('0');
 
     using std::setw;
-    os << setw(2) << static_cast<uint>(ltime.hour) << ':'
-       << setw(2) << static_cast<uint>(ltime.minute) << ':'
-       << setw(2) << static_cast<uint>(ltime.second);
+    os << setw(2) << static_cast<uint16_t>(ltime.hour) << ':'
+       << setw(2) << static_cast<uint16_t>(ltime.minute) << ':'
+       << setw(2) << static_cast<uint16_t>(ltime.second);
 
     if (ltime.nanosecond > 0)
     {

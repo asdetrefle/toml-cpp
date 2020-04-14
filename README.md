@@ -23,39 +23,40 @@ C++ Alternatives:
 To parse a TOML document from a file, you can do the following:
 
 ```cpp
-#include "toml/toml.h"
+#include "tominal/toml.h"
 
 // ## Parsing
 // `parse_file()` returns a `node_view` of a `toml::table`, which owns
 // a copy of `std::shared_ptr<table>` so there is no lifetime issue.
 // It will return an empty view if it catches an `toml::parse_error`.
-auto config = cpptoml::parse_file("examples/example.toml").ok();
+auto config = toml::parse_file("examples/example.toml").ok();
 
 // ## Obtaining Basic Values
-auto title = config["title"].value_or(""sv); // "TOML Example"sv
-// or you want to have a `std::optional<std::string_view>`
-auto optional_title = config["title"].value<std::string_view>().value();
+auto title = config["title"].value_or("TOML"sv); // "TOML Example"sv
+// or to have the default `std::string_view` if node_view is empty
+auto default_title = config["title"].value_or_default<std::string_view>();
 
 // ## Nested Tables
 // Nested tables can be queried directly by chaining `[]` operator through
 // the `node_view` and you can use a `map` function to convert to your data type
-auto author = config["owner"]["name"].value_or(""sv); // "Tom Preston-Werner"
+auto author = config["owner"]["name"].value_or("TOML");
+auto enabled = config["database.enabled"].value_or_default<bool>();
 
-// empty `std::optional<T>` will be mapped if node does not exist
-auto dob = config["owner"]["dob"].map<offset_date_time>([](const auto &val) {
+// map a node_view in place if it exists:
+auto dob = config["owner.dob"].map<offset_date_time>([](const auto &val) {
     return val.year * 10000 + val.month * 100 + val.day;
-}); // std::optional{19790527}
+});
+config["owner.dob"].map<local_date>([](const auto &val) {}); // void callback
+
 
 // ## Arrays of Values / Tables
 // Similarly to `toml::table`, you can access the `node` of a table by `[]`
 // operator. The are also `collect` and `map_collect` provided for convenience:
-auto gamma = config["clients"][0]["data"][0][0].value_or(""sv);
-auto data0 = config["clients"][0]["data"][0].collect<std::string_view>(); // std::vector{"gamma"sv, "delta"sv}
-
-auto ports = config["database"]["ports"].map_collect<int>(
-    [](const auto &val) {
-        return val - 1;
-    }); // std::vector{8000, 8000, 8001}
+auto gamma = config["clients"][0]["data"][1][1].value_or_default<int>();
+auto data0 = config["clients"][1]["host"].collect<std::string_view>(); // std::vector{"omega"sv}
+auto ports = config["database"]["ports"].map_collect<int>([](const auto &val) {
+    return val - 8000; // std::vector{0, 0, 1}
+});
 ```
 
 A problem I had with `cpptoml` was that I was not able to dereference an `rvalue` table or array:
@@ -97,12 +98,12 @@ Here are the fields of the date/time objects in cpptoml:
 - minute\_offset (`offset_date_time`)
 
 
-## Test Results - TODO
+## Test Results
 
 From [the toml-test suite][toml-test]:
 
 ```
-126 passed, 0 failed // TODO with TOML v1.0.0-rc.1
+116 passed, 12 failed // toml-test suite is only compliant with TOML v0.4.0
 ```
 
 ## Compilation
@@ -123,7 +124,7 @@ You can look at the files files `parse.cpp`, `parse_stdin.cpp`, and
 `build_toml.cpp` in the root directory for some more examples.
 
 `parse_stdin.cpp` shows how to use the visitor pattern to traverse an
-entire `cpptoml::table` for serialization.
+entire `toml::table` for serialization.
 
 `build_toml.cpp` shows how to construct a TOML representation in-memory and
 then serialize it to a stream.

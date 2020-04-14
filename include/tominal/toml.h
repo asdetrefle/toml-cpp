@@ -8,6 +8,8 @@
     {
 #define TOML_NAMESPACE_END }
 
+#include <cstdint>
+
 namespace toml
 {
 TOML_NAMESPACE_BEGIN

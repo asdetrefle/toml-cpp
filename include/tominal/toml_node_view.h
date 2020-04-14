@@ -74,6 +74,18 @@ public:
         return node_ ? node_->as_table() : nullptr;
     }
 
+    bool contains(std::string_view key) const
+    {
+        if (auto tbl = as_table())
+        {
+            return tbl->contains(key);
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     template <typename U>
     std::optional<U> value() const noexcept
     {
@@ -101,15 +113,31 @@ public:
         }
     }
 
+    template <typename T>
+    inline auto value_or_default() const noexcept
+    {
+        using return_type = decltype(node_->value_or_default<T>());
+
+        return node_ ? node_->value_or_default<T>() : return_type{};
+    }
+
     node_view operator[](std::string_view key) const
     {
+        node_view result{nullptr};
+        auto position = key.find('.');
+
         if (auto tbl = this->as_table())
         {
-            return {(*tbl)[key]};
+            result = node_view((*tbl)[key.substr(0, position)]);
+        }
+
+        if (position != std::string_view::npos && position + 1 < key.size())
+        {
+            return result[key.substr(position + 1)];
         }
         else
         {
-            return {nullptr};
+            return result;
         }
     }
 
@@ -125,10 +153,21 @@ public:
         }
     }
 
-    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>>
-    std::optional<U> map(F f) const
+    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
+              typename = std::enable_if_t<!std::is_void_v<U>>>
+    std::optional<U> map(F &&f) const
     {
         return node_ ? node_->map<T>(f) : std::nullopt;
+    }
+
+    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
+              typename = std::enable_if_t<std::is_void_v<U>>>
+    void map(F &&f) const
+    {
+        if (node_)
+        {
+            node_->map<T>(f);
+        }
     }
 
     template <typename T, typename U = typename value_type_traits<T>::type>
@@ -144,7 +183,8 @@ public:
         }
     }
 
-    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>>
+    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
+              typename = std::enable_if_t<!std::is_void_v<U>>>
     std::vector<U> map_collect(F &&f) const
     {
         if (auto arr = this->as_array())

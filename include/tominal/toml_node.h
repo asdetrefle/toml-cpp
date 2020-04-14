@@ -1,5 +1,6 @@
 #pragma once
 
+#include <assert.h>
 #include "toml_base.h"
 
 namespace toml
@@ -133,14 +134,6 @@ public:
 
         switch (type())
         {
-        case base_type::None:
-            [[fallthrough]];
-        case base_type::Table:
-            [[fallthrough]];
-        case base_type::Array:
-        {
-            return std::nullopt;
-        }
         case base_type::String:
         {
             if constexpr (value_type_traits<T>::value == base_type::String)
@@ -206,9 +199,10 @@ public:
         }
         case base_type::LocalDateTime:
         {
-            if constexpr (value_type_traits<T>::value == base_type::LocalDateTime)
+            if constexpr (value_type_traits<T>::value == base_type::LocalDateTime ||
+                          value_type_traits<T>::value == base_type::LocalDate)
             {
-                return {as_value<local_date_time>()->get()};
+                return {static_cast<T>(as_value<local_date_time>()->get())};
             }
             else
             {
@@ -217,9 +211,11 @@ public:
         }
         case base_type::OffsetDateTime:
         {
-            if constexpr (value_type_traits<T>::value == base_type::OffsetDateTime)
+            if constexpr (value_type_traits<T>::value == base_type::OffsetDateTime ||
+                          value_type_traits<T>::value == base_type::LocalDateTime ||
+                          value_type_traits<T>::value == base_type::LocalDate)
             {
-                return {as_value<offset_date_time>()->get()};
+                return {static_cast<T>(as_value<offset_date_time>()->get())};
             }
             else
             {
@@ -231,24 +227,30 @@ public:
         }
     }
 
-    template <typename T>
+    template <typename T, typename U = typename value_type_traits<std::decay_t<T>>::type>
     inline auto value_or(T &&default_value) const noexcept
     {
         static_assert(is_value_promotable<std::decay_t<T>>,
                       "default value must be of (or be promotable to) one of the TOML types");
 
-        using return_type = typename value_type_traits<std::decay_t<T>>::type;
-        if (auto val = this->value<return_type>())
+        if (auto val = this->value<U>())
         {
             return *val;
         }
         else
         {
-            return return_type{std::forward<T>(default_value)};
+            return U{std::forward<T>(default_value)};
         }
     }
 
-    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>>
+    template <typename T, typename = std::enable_if_t<std::is_nothrow_default_constructible_v<T>>>
+    inline auto value_or_default() const noexcept
+    {
+        return this->value_or<T>({});
+    }
+
+    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
+              typename = std::enable_if_t<!std::is_void_v<U>>>
     std::optional<U> map(F &&f) const
     {
         if constexpr (is_value_promotable<T>)
@@ -273,6 +275,33 @@ public:
             }
         }
         return std::nullopt;
+    }
+
+    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
+              typename = std::enable_if_t<std::is_void_v<U>>>
+    void map(F &&f) const
+    {
+        if constexpr (is_value_promotable<T>)
+        {
+            if (const auto val = this->value<T>())
+            {
+                f(val.value());
+            }
+        }
+        else if constexpr (std::is_same_v<T, array>)
+        {
+            if (const auto arr = this->as_array())
+            {
+                f(*arr);
+            }
+        }
+        else if constexpr (std::is_same_v<T, table>)
+        {
+            if (const auto tbl = this->as_table())
+            {
+                f(*tbl);
+            }
+        }
     }
 
     template <class Visitor, class... Args>

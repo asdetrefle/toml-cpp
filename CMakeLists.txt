@@ -1,10 +1,5 @@
 cmake_minimum_required(VERSION 3.14.0)
-project(toml VERSION 0.1)
-
-### These flags should be removed eventually
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+project(tominal VERSION 0.1)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -17,12 +12,12 @@ set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 option(TOML_BUILD_EXAMPLE "Build examples" OFF)
 option(TOML_BUILD_TEST "Build tests" ON)
 
-# Import tomlplusplus interface library
-add_library(toml INTERFACE IMPORTED)
+add_library(tominal INTERFACE IMPORTED)
 set_target_properties(
-    toml PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}"
+    tominal PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/include"
 )
+target_compile_features(tominal INTERFACE cxx_std_17)
 
 if(TOML_BUILD_TEST)
     include(FetchContent)
@@ -35,5 +30,9 @@ if(TOML_BUILD_TEST)
     FetchContent_MakeAvailable(googletest)
 
     enable_testing()
-    add_subdirectory(test)
+    add_subdirectory(tests)
+endif()
+
+if(TOML_BUILD_EXAMPLE)
+    add_subdirectory(examples)
 endif()

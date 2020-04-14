@@ -1,17 +1,19 @@
+### These flags should be removed eventually
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 add_executable(parse parse.cpp)
-target_link_libraries(parse cpptoml)
-set_target_properties(parse PROPERTIES
-  CXX_STANDARD 11
-  CXX_EXTENSIONS OFF
-  CXX_STANDARD_REQUIRED YES)
+target_link_libraries(parse tominal)
 
-add_executable(cpptoml-parser parse_stdin.cpp)
-target_link_libraries(cpptoml-parser cpptoml)
-set_target_properties(cpptoml-parser PROPERTIES
-  CXX_STANDARD 11
-  CXX_EXTENSIONS OFF
-  CXX_STANDARD_REQUIRED YES)
+add_executable(toml-parser parse_stdin.cpp)
+target_link_libraries(toml-parser tominal)
 
+if(FALSE)
 add_executable(cpptoml-build build_toml.cpp)
 target_link_libraries(cpptoml-build cpptoml)
 set_target_properties(cpptoml-build PROPERTIES
@@ -25,3 +27,4 @@ set_target_properties(cpptoml-conversions PROPERTIES
   CXX_STANDARD 11
   CXX_EXTENSIONS OFF
   CXX_STANDARD_REQUIRED YES)
+endif()

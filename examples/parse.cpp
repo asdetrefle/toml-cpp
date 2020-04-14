@@ -1,7 +1,5 @@
-#include "cpptoml.h"
-
 #include <iostream>
-#include <cassert>
+#include "tominal/toml.h"
 
 int main(int argc, char** argv)
 {
@@ -11,14 +9,14 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    try
+    if (auto result = toml::parse_file(argv[1]); result.is_ok())
     {
-        std::shared_ptr<cpptoml::table> g = cpptoml::parse_file(argv[1]);
-        std::cout << (*g) << std::endl;
+        auto view = result.ok();
+        std::cout << view << std::endl;
     }
-    catch (const cpptoml::parse_exception& e)
+    else
     {
-        std::cerr << "Failed to parse " << argv[1] << ": " << e.what() << std::endl;
+        std::cerr << "Failed to parse " << argv[1] << ": " << result.err().what() << std::endl;
         return 1;
     }
 

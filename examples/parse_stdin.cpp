@@ -1,7 +1,6 @@
-#include "cpptoml.h"
-
 #include <iostream>
 #include <limits>
+#include "tominal/toml.h"
 
 /**
  * A visitor for toml objects that writes to an output stream in the JSON
@@ -15,49 +14,49 @@ class toml_test_writer
         // nothing
     }
 
-    void visit(const cpptoml::value<std::string>& v)
+    void visit(const toml::value<std::string>& v)
     {
         stream_ << "{\"type\":\"string\",\"value\":\""
-                << cpptoml::toml_writer::escape_string(v.get()) << "\"}";
+                << toml::toml_writer::escape_string(v.get()) << "\"}";
     }
 
-    void visit(const cpptoml::value<int64_t>& v)
+    void visit(const toml::value<int64_t>& v)
     {
         stream_ << "{\"type\":\"integer\",\"value\":\"" << v.get() << "\"}";
     }
 
-    void visit(const cpptoml::value<double>& v)
+    void visit(const toml::value<double>& v)
     {
         stream_ << "{\"type\":\"float\",\"value\":\"" << v.get() << "\"}";
     }
 
-    void visit(const cpptoml::value<cpptoml::local_date>& v)
+    void visit(const toml::value<toml::local_date>& v)
     {
         stream_ << "{\"type\":\"local_date\",\"value\":\"" << v.get() << "\"}";
     }
 
-    void visit(const cpptoml::value<cpptoml::local_time>& v)
+    void visit(const toml::value<toml::local_time>& v)
     {
         stream_ << "{\"type\":\"local_time\",\"value\":\"" << v.get() << "\"}";
     }
 
-    void visit(const cpptoml::value<cpptoml::local_datetime>& v)
+    void visit(const toml::value<toml::local_date_time>& v)
     {
         stream_ << "{\"type\":\"local_datetime\",\"value\":\"" << v.get()
                 << "\"}";
     }
 
-    void visit(const cpptoml::value<cpptoml::offset_datetime>& v)
+    void visit(const toml::value<toml::offset_date_time>& v)
     {
         stream_ << "{\"type\":\"datetime\",\"value\":\"" << v.get() << "\"}";
     }
 
-    void visit(const cpptoml::value<bool>& v)
+    void visit(const toml::value<bool>& v)
     {
         stream_ << "{\"type\":\"bool\",\"value\":\"" << v << "\"}";
     }
 
-    void visit(const cpptoml::array& arr)
+    void visit(const toml::array& arr)
     {
         stream_ << "{\"type\":\"array\",\"value\":[";
         auto it = arr.get().begin();
@@ -70,27 +69,13 @@ class toml_test_writer
         stream_ << "]}";
     }
 
-    void visit(const cpptoml::table_array& tarr)
-    {
-        stream_ << "[";
-        auto arr = tarr.get();
-        auto ait = arr.begin();
-        while (ait != arr.end())
-        {
-            (*ait)->accept(*this);
-            if (++ait != arr.end())
-                stream_ << ", ";
-        }
-        stream_ << "]";
-    }
-
-    void visit(const cpptoml::table& t)
+    void visit(const toml::table& t)
     {
         stream_ << "{";
         auto it = t.begin();
         while (it != t.end())
         {
-            stream_ << '"' << cpptoml::toml_writer::escape_string(it->first)
+            stream_ << '"' << toml::toml_writer::escape_string(it->first)
                     << "\":";
             it->second->accept(*this);
             if (++it != t.end())
@@ -106,15 +91,15 @@ class toml_test_writer
 int main()
 {
     std::cout.precision(std::numeric_limits<double>::max_digits10);
-    cpptoml::parser p{std::cin};
+    toml::parser p{std::cin};
     try
     {
-        std::shared_ptr<cpptoml::table> g = p.parse();
+        std::shared_ptr<toml::table> g = p.parse();
         toml_test_writer writer{std::cout};
         g->accept(writer);
         std::cout << std::endl;
     }
-    catch (const cpptoml::parse_exception& ex)
+    catch (const toml::parse_error& ex)
     {
         std::cerr << "Parsing failed: " << ex.what() << std::endl;
         return 1;

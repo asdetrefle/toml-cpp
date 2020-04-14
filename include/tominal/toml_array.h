@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-
 #include "toml_base.h"
 #include "toml_node.h"
 
@@ -178,7 +177,8 @@ public:
     }
 
     template <typename T, typename F, typename U = typename value_type_traits<T>::type,
-              typename V = std::invoke_result_t<F, const T &>>
+              typename V = std::invoke_result_t<F, const T &>,
+              typename = std::enable_if_t<!std::is_void_v<V>>>
     std::vector<V> map_collect(F &&f) const
     {
         std::vector<V> result;
