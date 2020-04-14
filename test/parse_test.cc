@@ -1,6 +1,6 @@
 #include <iostream>
 #include "gtest/gtest.h"
-#include "toml/toml.h"
+#include "tominal/toml.h"
 
 namespace
 {
