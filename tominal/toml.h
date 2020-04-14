@@ -47,12 +47,12 @@ class parse_result;
 TOML_NAMESPACE_END
 } // namespace toml
 
-#include "toml/toml_base.h"
-#include "toml/toml_date_time.h"
-#include "toml/toml_node.h"
-#include "toml/toml_value.h"
-#include "toml/toml_array.h"
-#include "toml/toml_table.h"
-#include "toml/toml_node_view.h"
-#include "toml/toml_parser.h"
-#include "toml/toml_writer.h"
+#include "toml_base.h"
+#include "toml_date_time.h"
+#include "toml_node.h"
+#include "toml_value.h"
+#include "toml_array.h"
+#include "toml_table.h"
+#include "toml_node_view.h"
+#include "toml_parser.h"
+#include "toml_writer.h"

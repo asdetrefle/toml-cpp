@@ -37,7 +37,7 @@ TEST(toml_test, parse_example)
                                                                      val.at(2)->value_or(0));
                                            })
                   .value(),
-              (std::pair{8001, 8001}));
+              (std::pair{8001, 8002}));
 }
 
 TEST(toml_test, parse_array)
