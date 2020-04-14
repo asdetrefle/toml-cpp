@@ -31,11 +31,13 @@ TEST(toml_test, parse_example)
     EXPECT_EQ(view["clients"][0]["data"][0][0].value_or(""sv), "gamma"sv);
     EXPECT_EQ(view["clients"][0]["data"][0].collect<std::string_view>(),
               (std::vector{"gamma"sv, "delta"sv}));
-    EXPECT_EQ(view["database"]["ports"].map_collect<int>(
-                  [](const auto &val) {
-                      return val - 1;
-                  }),
-              (std::vector{8000, 8000, 8001}));
+    EXPECT_EQ(view["database"]["ports"].map<toml::array>(
+                                           [](const auto &val) {
+                                               return std::make_pair(val.at(1)->value_or(0),
+                                                                     val.at(2)->value_or(0));
+                                           })
+                  .value(),
+              (std::pair{8001, 8001}));
 }
 
 TEST(toml_test, parse_array)

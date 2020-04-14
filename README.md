@@ -8,7 +8,9 @@ Targets: [TOML v1.0.0-rc.1][currver] as of April 2020.
 This project was previously a fork of [cpptoml][cpptoml], but rewritten (partially) according to the new released standard [v1.0.0-rc.1][currver]. This includes support for features like mixed type arrays.
 
 Many of the concepts and implementation are brought from [toml++][tomlplusplus]. Being an awesome
-C++ library for TOML, it seems a bit heavy and complicated for my use case. [cpptoml][cpptoml] was perfect but I really want to add the idea of `node_view` from [toml++][tomlplusplus] so the user can chain `[]` operator to query nested tables and arrays. So I decide to rewrite [cpptoml][cpptoml] but still keep it minimal. Any contributions or suggestions are very welcome!
+C++ library for TOML, it seems a bit heavy and complicated for my use case. [cpptoml][cpptoml] was perfect but I really want to add the idea of `node_view` from [toml++][tomlplusplus] so the user can chain `[]` operator to query nested tables and arrays. Any contributions or suggestions are very welcome!
+
+
 
 C++ Alternatives:
 - [toml++][tomlplusplus] is a C++17/20 implementation of a TOML parser, which also supports v1.0.0-rc.1 as of writing.
@@ -23,11 +25,10 @@ To parse a TOML document from a file, you can do the following:
 ```cpp
 #include "toml/toml.h"
 
-/**
- * `parse_file()` returns a `node_view` of a `toml::table`, which owns
- * a copy of `std::shared_ptr<table>` so there is no lifetime issue.
- * It will return an empty view if it catches an `toml::parse_error`.
- * */
+// ## Parsing
+// `parse_file()` returns a `node_view` of a `toml::table`, which owns
+// a copy of `std::shared_ptr<table>` so there is no lifetime issue.
+// It will return an empty view if it catches an `toml::parse_error`.
 auto config = cpptoml::parse_file("examples/example.toml").ok();
 
 // ## Obtaining Basic Values
@@ -35,10 +36,9 @@ auto title = config["title"].value_or(""sv); // "TOML Example"sv
 // or you want to have a `std::optional<std::string_view>`
 auto optional_title = config["title"].value<std::string_view>().value();
 
-/** ## Nested Tables
- * Nested tables can be queried directly by chaining `[]` operator through
- * the `node_view` and you can use a `map` function to convert to your data type
- * */
+// ## Nested Tables
+// Nested tables can be queried directly by chaining `[]` operator through
+// the `node_view` and you can use a `map` function to convert to your data type
 auto author = config["owner"]["name"].value_or(""sv); // "Tom Preston-Werner"
 
 // empty `std::optional<T>` will be mapped if node does not exist
@@ -46,22 +46,19 @@ auto dob = config["owner"]["dob"].map<offset_date_time>([](const auto &val) {
     return val.year * 10000 + val.month * 100 + val.day;
 }); // std::optional{19790527}
 
-/** ## Arrays of Values / Tables
- * Similarly to `toml::table`, you can access the `node` of a table by `[]`
- * operator. The are also `collect` and `map_collect` provided for convenience:
- * */
-
+// ## Arrays of Values / Tables
+// Similarly to `toml::table`, you can access the `node` of a table by `[]`
+// operator. The are also `collect` and `map_collect` provided for convenience:
 auto gamma = config["clients"][0]["data"][0][0].value_or(""sv);
-// std::vector{"gamma"sv, "delta"sv}
-auto data0 = config["clients"][0]["data"][0].collect<std::string_view>();
-// std::vector{8000, 8000, 8001}
-auto ports = config["database"]["ports"].map_collect<int>([](const auto &val) {
-                                                            return val - 1;
-                                                        });
+auto data0 = config["clients"][0]["data"][0].collect<std::string_view>(); // std::vector{"gamma"sv, "delta"sv}
+
+auto ports = config["database"]["ports"].map_collect<int>(
+    [](const auto &val) {
+        return val - 1;
+    }); // std::vector{8000, 8000, 8001}
 ```
 
-A problem I encountered with `cpptoml` was that I was not able to dereference
-an `rvalue` table or array:
+A problem I had with `cpptoml` was that I was not able to dereference an `rvalue` table or array:
 
 ```cpp
 // This will fail with cpptoml

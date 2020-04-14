@@ -21,9 +21,7 @@ public:
     using size_type = size_t;
     using difference_type = ptrdiff_t;
 
-    /// \brief A RandomAccessIterator for iterating over nodes in a toml::array.
     using iterator = std::vector<std::shared_ptr<node>>::iterator;
-    /// \brief A RandomAccessIterator for iterating over const nodes in a toml::array.
     using const_iterator = std::vector<std::shared_ptr<node>>::const_iterator;
 
     array(const make_shared_enabler &) noexcept
@@ -108,7 +106,6 @@ public:
         return true;
     }
 
-    /// \brief	Returns true if this array contains only tables.
     bool is_table_array() const noexcept override
     {
         return is_homogeneous<toml::table>();
@@ -164,31 +161,32 @@ public:
             }
             else if constexpr (std::is_same_v<T, array>)
             {
-                if (const auto val = n->as_array())
+                if (const auto arr = n->as_array())
                 {
-                    result.emplace_back(std::move(val));
+                    result.emplace_back(std::move(arr));
                 }
             }
             else if constexpr (std::is_same_v<T, table>)
             {
-                if (const auto val = n->as_table())
+                if (const auto tbl = n->as_table())
                 {
-                    result.emplace_back(std::move(val));
+                    result.emplace_back(std::move(tbl));
                 }
             }
         }
         return result;
     }
 
-    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>>
-    std::vector<U> map_collect(F f) const
+    template <typename T, typename F, typename U = typename value_type_traits<T>::type,
+              typename V = std::invoke_result_t<F, const T &>>
+    std::vector<V> map_collect(F &&f) const
     {
-        std::vector<U> result;
+        std::vector<V> result;
         for (const auto &n : nodes_)
         {
-            if (const auto val = n->value<T>())
+            if (const auto val = n->map<T>(f))
             {
-                result.emplace_back(f(val.value()));
+                result.emplace_back(val.value());
             }
         }
         return result;
@@ -245,7 +243,6 @@ private:
     array &operator=(const array &obj) = delete;
 
     /*
-
     /// \brief	Gets the node at a specific index.
     ///
     /// \detail \cpp

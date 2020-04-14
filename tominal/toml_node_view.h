@@ -128,14 +128,7 @@ public:
     template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>>
     std::optional<U> map(F f) const
     {
-        if (auto val = this->value<T>())
-        {
-            return {f(val.value())};
-        }
-        else
-        {
-            return std::nullopt;
-        }
+        return node_ ? node_->map<T>(f) : std::nullopt;
     }
 
     template <typename T, typename U = typename value_type_traits<T>::type>
@@ -152,7 +145,7 @@ public:
     }
 
     template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>>
-    std::vector<U> map_collect(F f) const
+    std::vector<U> map_collect(F &&f) const
     {
         if (auto arr = this->as_array())
         {

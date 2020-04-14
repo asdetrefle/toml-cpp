@@ -248,6 +248,33 @@ public:
         }
     }
 
+    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>>
+    std::optional<U> map(F &&f) const
+    {
+        if constexpr (is_value_promotable<T>)
+        {
+            if (const auto val = this->value<T>())
+            {
+                return {f(val.value())};
+            }
+        }
+        else if constexpr (std::is_same_v<T, array>)
+        {
+            if (const auto arr = this->as_array())
+            {
+                return {f(*arr)};
+            }
+        }
+        else if constexpr (std::is_same_v<T, table>)
+        {
+            if (const auto tbl = this->as_table())
+            {
+                return {f(*tbl)};
+            }
+        }
+        return std::nullopt;
+    }
+
     template <class Visitor, class... Args>
     void accept(Visitor &&visitor, Args &&... args) const;
 

@@ -141,14 +141,14 @@ struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<std::decay_t<T
 };
 
 template <class T>
-struct value_type_traits<T, typename std::enable_if_t<std::is_same_v<T, table>>>
+struct value_type_traits<T, typename std::enable_if_t<std::is_same_v<T, toml::table>>>
 {
     using type = std::shared_ptr<table>;
     static constexpr auto value = base_type::Table;
 };
 
 template <class T>
-struct value_type_traits<T, typename std::enable_if_t<std::is_same_v<T, array>>>
+struct value_type_traits<T, typename std::enable_if_t<std::is_same_v<T, toml::array>>>
 {
     using type = std::shared_ptr<array>;
     static constexpr auto value = base_type::Array;
