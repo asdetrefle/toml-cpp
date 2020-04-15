@@ -155,7 +155,7 @@ struct value_type_traits<T, typename std::enable_if_t<std::is_same_v<T, toml::ar
     static constexpr auto value = base_type::Array;
 };
 
-#if __cplusplus > 201703
+#if __cplusplus >= 201711L
 using remove_cvref_t = std::remove_cvref_t<T>;
 #else
 template <typename T>

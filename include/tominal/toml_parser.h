@@ -101,7 +101,7 @@ public:
         : is_error_{false},
           result_{std::in_place_type<node_view>, tbl} {}
 
-    parse_result(parse_error &&err) noexcept
+    parse_result(const parse_error &err) noexcept
         : is_error_{true},
           result_{std::in_place_type<parse_error>, err} {}
 
@@ -1482,7 +1482,7 @@ parse_result parse_file(const std::string &file_path)
             parser p{file};
             return {p.parse()};
         }
-        catch (parse_error e)
+        catch (const parse_error &e)
         {
             return {std::move(e)};
         }
@@ -1497,9 +1497,9 @@ parse_result parse(const std::string &source)
         parser p{source_stream};
         return {p.parse()};
     }
-    catch (parse_error e)
+    catch (const parse_error &e)
     {
-        return {std::move(e)};
+        return {e};
     }
 }
 TOML_NAMESPACE_END

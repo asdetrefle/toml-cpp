@@ -12,10 +12,10 @@ set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 option(TOML_BUILD_EXAMPLE "Build examples" OFF)
 option(TOML_BUILD_TEST "Build tests" ON)
 
-add_library(tominal INTERFACE IMPORTED)
-set_target_properties(
-    tominal PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/include"
+add_library(tominal INTERFACE)
+target_include_directories(
+    tominal INTERFACE
+    "${PROJECT_SOURCE_DIR}/include"
 )
 target_compile_features(tominal INTERFACE cxx_std_17)
 

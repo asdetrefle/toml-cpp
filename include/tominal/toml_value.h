@@ -63,5 +63,106 @@ std::shared_ptr<value<typename value_type_traits<T>::type>> make_value(T &&val)
     return std::make_shared<value_type>(enabler{}, std::forward<T>(val));
 }
 
+template <typename T>
+inline std::optional<T> node::value() const noexcept
+{
+    static_assert(toml::is_value_promotable<T>,
+                  "value type must be one of the TOML value types (or string_view)");
+
+    switch (type())
+    {
+    case base_type::String:
+    {
+        if constexpr (value_type_traits<T>::value == base_type::String)
+            return {T{as_value<std::string>()->get()}};
+        else
+            return std::nullopt;
+    }
+    case base_type::Integer:
+    {
+        if constexpr (value_type_traits<T>::value == base_type::Integer ||
+                      value_type_traits<T>::value == base_type::Float)
+        {
+            return {static_cast<T>(as_value<int64_t>()->get())};
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+    case base_type::Float:
+    {
+        if constexpr (value_type_traits<T>::value == base_type::Float)
+        {
+            return {static_cast<T>(as_value<double>()->get())};
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+    case base_type::Boolean:
+    {
+        if constexpr (value_type_traits<T>::value == base_type::Boolean)
+        {
+            return {as_value<bool>()->get()};
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+    case base_type::LocalDate:
+    {
+        if constexpr (value_type_traits<T>::value == base_type::LocalDate)
+        {
+            return {as_value<local_date>()->get()};
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+    case base_type::LocalTime:
+    {
+        if constexpr (value_type_traits<T>::value == base_type::LocalTime)
+        {
+            return {as_value<local_time>()->get()};
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+    case base_type::LocalDateTime:
+    {
+        if constexpr (value_type_traits<T>::value == base_type::LocalDateTime ||
+                      value_type_traits<T>::value == base_type::LocalDate)
+        {
+            return {static_cast<T>(as_value<local_date_time>()->get())};
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+    case base_type::OffsetDateTime:
+    {
+        if constexpr (value_type_traits<T>::value == base_type::OffsetDateTime ||
+                      value_type_traits<T>::value == base_type::LocalDateTime ||
+                      value_type_traits<T>::value == base_type::LocalDate)
+        {
+            return {static_cast<T>(as_value<offset_date_time>()->get())};
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+    default:
+        return std::nullopt;
+    }
+}
+
 TOML_NAMESPACE_END
 } // namespace toml
