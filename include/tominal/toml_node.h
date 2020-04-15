@@ -208,6 +208,10 @@ public:
                 f(*tbl);
             }
         }
+        else if constexpr (std::is_same_v<T, node_view>)
+        {
+            f(this->view());
+        }
     }
 
     template <class Visitor, class... Args>
