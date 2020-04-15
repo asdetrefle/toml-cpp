@@ -153,7 +153,7 @@ public:
         {
             if constexpr (is_value_promotable<T>)
             {
-                if (const auto val = n->value<U>())
+                if (const auto val = n->template value<U>())
                 {
                     result.emplace_back(val.value());
                 }
@@ -176,15 +176,14 @@ public:
         return result;
     }
 
-    template <typename T, typename F, typename U = typename value_type_traits<T>::type,
-              typename V = std::invoke_result_t<F, const T &>,
-              typename = std::enable_if_t<!std::is_void_v<V>>>
-    std::vector<V> map_collect(F &&f) const
+    template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
+              typename = std::enable_if_t<!std::is_void_v<U>>>
+    std::vector<U> map_collect(F &&f) const
     {
-        std::vector<V> result;
+        std::vector<U> result;
         for (const auto &n : nodes_)
         {
-            if (const auto val = n->map<T>(f))
+            if (const auto val = n->template map<T>(f))
             {
                 result.emplace_back(val.value());
             }

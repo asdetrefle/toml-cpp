@@ -157,7 +157,7 @@ public:
               typename = std::enable_if_t<!std::is_void_v<U>>>
     std::optional<U> map(F &&f) const
     {
-        return node_ ? node_->map<T>(f) : std::nullopt;
+        return node_ ? node_->template map<T>(f) : std::nullopt;
     }
 
     template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
@@ -166,7 +166,7 @@ public:
     {
         if (node_)
         {
-            node_->map<T>(f);
+            node_->template map<T>(f);
         }
     }
 

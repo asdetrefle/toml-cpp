@@ -133,11 +133,17 @@ struct value_type_traits<T, typename std::enable_if_t<std::is_floating_point_v<T
 };
 
 template <class T>
-struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<std::decay_t<T>,
-                                                                  std::string_view,
-                                                                  const char *>>>
+struct value_type_traits<T, typename std::enable_if_t<std::is_same_v<T, std::string_view>>>
 {
     using type = std::string_view;
+    static constexpr auto value = base_type::String;
+};
+
+template <class T>
+struct value_type_traits<T, typename std::enable_if_t<std::is_same_v<std::decay_t<T>,
+                                                                     const char *>>>
+{
+    using type = std::string;
     static constexpr auto value = base_type::String;
 };
 

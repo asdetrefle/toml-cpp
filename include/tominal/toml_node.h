@@ -135,7 +135,7 @@ public:
         static_assert(is_value_promotable<std::decay_t<T>>,
                       "default value must be of (or be promotable to) one of the TOML types");
 
-        if (auto val = this->value<U>())
+        if (auto val = this->template value<U>())
         {
             return *val;
         }
@@ -148,7 +148,7 @@ public:
     template <typename T, typename = std::enable_if_t<std::is_nothrow_default_constructible_v<T>>>
     inline auto value_or_default() const noexcept
     {
-        return this->value_or<T>({});
+        return this->template value_or<T>({});
     }
 
     template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
@@ -157,7 +157,7 @@ public:
     {
         if constexpr (is_value_promotable<T>)
         {
-            if (const auto val = this->value<T>())
+            if (const auto val = this->template value<T>())
             {
                 return {f(val.value())};
             }
@@ -185,7 +185,7 @@ public:
     {
         if constexpr (is_value_promotable<T>)
         {
-            if (const auto val = this->value<T>())
+            if (const auto val = this->template value<T>())
             {
                 f(val.value());
             }
