@@ -109,7 +109,7 @@ struct value_type_traits
 };
 
 template <class T>
-struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<T,
+struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<remove_cvref_t<T>,
                                                                   int32_t,
                                                                   int16_t,
                                                                   int8_t,
@@ -124,7 +124,7 @@ struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<T,
 };
 
 template <class T>
-struct value_type_traits<T, typename std::enable_if_t<std::is_floating_point_v<T>>>
+struct value_type_traits<T, typename std::enable_if_t<std::is_floating_point_v<remove_cvref_t<T>>>>
 {
     using type = T;
     using base_type = double;
