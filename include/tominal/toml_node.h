@@ -176,6 +176,10 @@ public:
                 return {f(*tbl)};
             }
         }
+        else if constexpr (std::is_same_v<T, node_view>)
+        {
+            return {f(this->view())};
+        }
         return std::nullopt;
     }
 

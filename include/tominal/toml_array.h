@@ -168,6 +168,10 @@ public:
                     result.emplace_back(std::move(tbl));
                 }
             }
+            else if constexpr (std::is_same_v<T, node_view>)
+            {
+                result.emplace_back(n->view());
+            }
         }
         return result;
     }

@@ -99,6 +99,18 @@ public:
         }
     }
 
+    template <typename U>
+    auto expect() const
+    {
+        auto val = this->template value<U>();
+
+        if (!val)
+        {
+            throw std::runtime_error("toml::node_view is expecting a missing value");  
+        }
+        return val.value();
+    }
+
     template <typename T>
     auto value_or(T &&default_value) const noexcept
     {
