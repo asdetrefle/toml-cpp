@@ -14,6 +14,7 @@ class array final : public node
     {
     };
     friend std::shared_ptr<array> make_array();
+    friend class node_view;
 
 public:
     using value_type = std::shared_ptr<node>;
@@ -120,19 +121,14 @@ public:
         return nodes_;
     }
 
-    std::shared_ptr<node> at(size_t idx) const
+    std::shared_ptr<node> at(size_t idx)
     {
         return nodes_.at(idx);
     }
 
-    std::shared_ptr<node> operator[](size_t index)
+    std::shared_ptr<const node> at(size_t idx) const
     {
-        return nodes_[index];
-    }
-
-    std::shared_ptr<const node> operator[](size_t index) const
-    {
-        return nodes_[index];
+        return nodes_.at(idx);
     }
 
     std::shared_ptr<node> front()
@@ -196,8 +192,8 @@ public:
         nodes_.emplace_back(n);
     }
 
-    template <class T>
-    void emplace_back(std::enable_if_t<toml::is_value_promotable<T>, T> &&val)
+    template <typename T, typename = std::enable_if_t<toml::is_value_promotable<T>>>
+    void emplace_back(T &&val)
     {
         nodes_.emplace_back(make_value(std::forward<T>(val)));
     }
@@ -240,6 +236,18 @@ private:
 
     array(const array &obj) = delete;
     array &operator=(const array &obj) = delete;
+
+    std::shared_ptr<node> operator[](size_t index)
+    {
+        if (index < nodes_.size())
+        {
+            return nodes_[index];
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
 
     /*
     /// \brief	Gets the node at a specific index.

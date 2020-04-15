@@ -12,7 +12,7 @@ TEST(toml_test, parse_example)
     auto view = parse_file("../examples/example.toml").ok();
 
     EXPECT_TRUE(bool(view));
-    EXPECT_EQ(view["title"].value_or_default<std::string_view>(), "TOML Example");
+    EXPECT_EQ(view["title"].value_or_default<std::string_view>(), "TOML Example"sv);
     EXPECT_EQ(view["owner"]["name"].value_or("Tom"sv), "Tom Preston-Werner"sv);
 
     EXPECT_TRUE(view["owner"]["dob"].map<offset_date_time>([](const auto &val) {

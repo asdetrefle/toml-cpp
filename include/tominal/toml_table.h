@@ -98,6 +98,30 @@ public:
         return map_;
     }
 
+    std::shared_ptr<node> at(std::string_view key)
+    {
+        if (auto it = map_.find(key); it != map_.end())
+        {
+            return it->second;
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
+    std::shared_ptr<const node> at(std::string_view key) const
+    {
+        if (auto it = map_.find(key); it != map_.end())
+        {
+            return it->second;
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
     iterator find(std::string_view key)
     {
         return map_.find(key);
@@ -106,30 +130,6 @@ public:
     const_iterator find(std::string_view key) const
     {
         return map_.find(key);
-    }
-
-    std::shared_ptr<node> operator[](std::string_view key)
-    {
-        if (auto it = map_.find(key); it != map_.end())
-        {
-            return it->second;
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
-
-    std::shared_ptr<const node> operator[](std::string_view key) const
-    {
-        if (auto it = map_.find(key); it != map_.end())
-        {
-            return it->second;
-        }
-        else
-        {
-            return nullptr;
-        }
     }
 
     // this will overwrite existing node
@@ -146,7 +146,14 @@ public:
         auto ipos = map_.lower_bound(key);
         if (ipos == map_.end() || ipos->first != key)
         {
-            ipos = map_.emplace_hint(ipos, std::forward<K>(key), std::forward<V>(val));
+            if constexpr (is_value_promotable<V>)
+            {
+                ipos = map_.emplace_hint(ipos, std::forward<K>(key), make_value(std::forward<V>(val)));
+            }
+            else
+            {
+                ipos = map_.emplace_hint(ipos, std::forward<K>(key), std::forward<V>(val));
+            }
             return {ipos, true};
         }
         return {ipos, false};

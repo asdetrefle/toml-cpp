@@ -17,10 +17,9 @@ class value final : public node
     };
 
     template <class U>
-    friend std::shared_ptr<value<typename value_type_traits<U>::type>> make_value(U &&val);
+    friend std::shared_ptr<value<typename value_type_traits<U>::base_type>> make_value(U &&val);
 
-    static_assert(std::is_same_v<T, typename base_type_traits<T>::type>,
-                  "Template type parameter must be one of the TOML value types");
+    static_assert(toml::is_value<T>, "Template type parameter must be one of the TOML value types");
 
 public:
     std::shared_ptr<node> clone() const override
@@ -46,7 +45,7 @@ private:
     T data_;
 
     value(const T &val)
-        : node(base_type_traits<T>::value),
+        : node(value_type_traits<T>::value),
           data_(val) {}
 
     value(const value &val) = delete;
@@ -54,11 +53,11 @@ private:
 };
 
 template <class T>
-std::shared_ptr<value<typename value_type_traits<T>::type>> make_value(T &&val)
+std::shared_ptr<value<typename value_type_traits<T>::base_type>> make_value(T &&val)
 {
     static_assert(is_value_promotable<T>,
                   "make_value type must be of (or be promotable to) one of the TOML types");
-    using value_type = value<typename value_type_traits<T>::type>;
+    using value_type = value<typename value_type_traits<T>::base_type>;
     using enabler = typename value_type::make_shared_enabler;
     return std::make_shared<value_type>(enabler{}, std::forward<T>(val));
 }

@@ -290,7 +290,7 @@ private:
 
             if (curr_table->contains(part))
             {
-                auto b = (*curr_table)[part];
+                auto b = curr_table->at(part);
                 if (b->is_table())
                     curr_table = static_cast<table *>(b.get());
                 else if (b->is_table_array())
@@ -302,7 +302,7 @@ private:
             {
                 inserted = true;
                 curr_table->emplace(part, make_table());
-                curr_table = static_cast<table *>((*curr_table)[part].get());
+                curr_table = static_cast<table *>(curr_table->at(part).get());
             }
         };
 
@@ -365,7 +365,7 @@ private:
 
             if (curr_table->contains(part))
             {
-                auto b = (*curr_table)[part];
+                auto b = curr_table->at(part);
 
                 // if this is the end of the table array name, add an
                 // element to the table array that we just looked up,
@@ -417,7 +417,7 @@ private:
                 else
                 {
                     curr_table->emplace(part, make_table());
-                    curr_table = static_cast<table *>((*curr_table)[part].get());
+                    curr_table = static_cast<table *>(curr_table->at(part).get());
                 }
             }
         };
@@ -446,7 +446,7 @@ private:
             // an implicitly defined table
             if (curr_table->contains(part))
             {
-                auto val = (*curr_table)[part];
+                auto val = curr_table->at(part);
                 if (val->is_table())
                 {
                     curr_table = static_cast<table *>(val.get());
@@ -697,7 +697,7 @@ private:
                 return parse_multiline_string(it, end, delim);
             }
         }
-        return make_value<std::string>(string_literal(it, end, delim));
+        return make_value(string_literal(it, end, delim));
     }
 
     std::shared_ptr<value<std::string>>

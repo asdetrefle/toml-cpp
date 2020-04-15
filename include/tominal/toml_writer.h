@@ -53,7 +53,7 @@ public:
         }
 
         std::sort(values.begin(), values.end(), [&](const auto &lhs, const auto &rhs) {
-            return t[lhs]->is_table_array() < t[rhs]->is_table_array() ? true : lhs < rhs;
+            return t.at(lhs)->is_table_array() < t.at(rhs)->is_table_array() ? true : lhs < rhs;
         });
 
         for (size_t i = 0; i < values.size(); ++i)
@@ -64,13 +64,13 @@ public:
             {
                 endline();
 
-                if (t[values[i]]->is_table_array())
+                if (t.at(values[i])->is_table_array())
                     stream_ << "\n";
             }
 
-            write_table_item_header(*(t[values[i]]));
+            write_table_item_header(*(t.at(values[i])));
 
-            t[values[i]]->accept(*this, false);
+            t.at(values[i])->accept(*this, false);
 
             path_.pop_back();
         }
@@ -82,8 +82,8 @@ public:
             if (values.size() > 0 || i > 0)
                 endline();
 
-            write_table_item_header(*(t[tables[i]]));
-            t[tables[i]]->accept(*this, false);
+            write_table_item_header(*(t.at(tables[i])));
+            t.at(tables[i])->accept(*this, false);
             path_.pop_back();
         }
 
@@ -100,7 +100,7 @@ public:
         {
             for (size_t i = 0; i < a.size(); ++i)
             {
-                a[i]->as_table()->accept(*this, true);
+                a.at(i)->as_table()->accept(*this, true);
             }
         }
         else
@@ -112,13 +112,13 @@ public:
                 if (i > 0)
                     write(", ");
 
-                if (a[i]->is_array())
+                if (auto n = a.at(i); n->is_array())
                 {
-                    a[i]->as_array()->accept(*this, true);
+                    n->as_array()->accept(*this, true);
                 }
                 else
                 {
-                    a[i]->accept(*this, true);
+                    n->accept(*this, true);
                 }
             }
 

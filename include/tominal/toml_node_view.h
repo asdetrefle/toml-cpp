@@ -128,7 +128,7 @@ public:
 
         if (auto tbl = this->as_table())
         {
-            result = node_view((*tbl)[key.substr(0, position)]);
+            result = node_view(tbl->at(key.substr(0, position)));
         }
 
         if (position != std::string_view::npos && position + 1 < key.size())
