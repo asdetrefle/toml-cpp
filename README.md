@@ -1,7 +1,7 @@
 # tominal - Minimal TOML parser and writer
 A header-only C++17 library for parsing and writing [TOML][toml] configuration files.
 
-Targets: [TOML v1.0.0-rc.1][currver] as of April 2020.
+Targets: [TOML v1.0.0-rc.1][currver] as of April 2020. [![Build Status](https://travis-ci.com/asdetrefle/tominal.svg?branch=master)](https://travis-ci.com/github/asdetrefle/tominal)
 
 ## Motivation:
 
