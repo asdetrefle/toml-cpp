@@ -1,7 +1,7 @@
 # tominal - Minimal TOML parser and writer
-A header-only C++17 library for parsing and writing [TOML][toml] configuration files.
+[![Build Status](https://travis-ci.com/asdetrefle/tominal.svg?branch=master)](https://travis-ci.com/github/asdetrefle/tominal)
 
-Targets: [TOML v1.0.0-rc.1][currver] as of April 2020. [![Build Status](https://travis-ci.com/asdetrefle/tominal.svg?branch=master)](https://travis-ci.com/github/asdetrefle/tominal)
+A header-only C++17 library for parsing and writing [TOML][toml] configuration files. Targets: [TOML v1.0.0-rc.1][currver].
 
 ## Motivation:
 
@@ -16,8 +16,6 @@ C++ Alternatives:
 - [toml++][tomlplusplus] is a C++17/20 implementation of a TOML parser, which also supports v1.0.0-rc.1 as of writing.
 - [toml11][toml11] is a C++11/14/17 implementation of a TOML parser which supports v1.0.0-rc.1 as well.
 - [cpptoml][cpptoml] is the former version of this project. It supports v0.5.0 currently.
-
-## Build Status
 
 ## Example Usage
 To parse a TOML document from a file, you can do the following:
