@@ -9,7 +9,7 @@ addons:
     packages:
       - g++-9
 
-  install:
+install:
   - mkdir -p $HOME/lib
   - export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
   - mkdir -p $HOME/bin
