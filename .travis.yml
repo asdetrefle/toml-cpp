@@ -9,6 +9,16 @@ addons:
     packages:
       - g++-9
 
+  install:
+  - mkdir -p $HOME/lib
+  - export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
+  - mkdir -p $HOME/bin
+  - export PATH=$HOME/bin:$PATH
+  - mkdir -p $HOME/include
+  - export CPLUS_INCLUDE_PATH=$HOME/include:$CPLUS_INCLUDE_PATH
+  - wget --no-check-certificate http://www.cmake.org/files/v3.15/cmake-3.15.0-Linux-x86_64.sh
+  - sh cmake-3.15.0-Linux-x86_64.sh --prefix=$HOME --exclude-subdir
+
 script:
   - export CC=gcc-9
   - export CXX=g++-9
