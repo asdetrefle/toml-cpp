@@ -1,5 +1,5 @@
 # toml-cpp - Minimal TOML parser and writer
-[![Build Status](https://travis-ci.com/asdetrefle/toml-cpp.svg?branch=master)](https://travis-ci.com/asdetrefle/toml-cpp.svg?branch=master)
+[![Build Status](https://travis-ci.com/asdetrefle/toml-cpp.svg?branch=master)](https://travis-ci.com/github/asdetrefle/toml-cpp)
 
 A header-only C++17 library for parsing and writing [TOML][toml] configuration files. Targets: [TOML v1.0.0-rc.1][currver].
 
