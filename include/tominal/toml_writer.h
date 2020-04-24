@@ -100,7 +100,7 @@ public:
         {
             for (size_t i = 0; i < a.size(); ++i)
             {
-                a.at(i)->as_table()->accept(*this, true);
+                a.at(i)->as<table>()->accept(*this, true);
             }
         }
         else
@@ -114,7 +114,7 @@ public:
 
                 if (auto n = a.at(i); n->is_array())
                 {
-                    n->as_array()->accept(*this, true);
+                    n->as<array>()->accept(*this, true);
                 }
                 else
                 {

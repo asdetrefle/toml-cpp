@@ -78,47 +78,21 @@ public:
         }
     }
 
-    std::shared_ptr<array> as_array()
+    template <typename T>
+    inline std::optional<T> value() const noexcept; // implemented in toml_value.h
+
+    template <typename T, typename U = typename value_type_traits<std::decay_t<T>>::type>
+    std::enable_if_t<is_value_promotable<std::decay_t<T>>, std::optional<U>> as() const
     {
-        if (is_array())
-        {
-            return std::static_pointer_cast<toml::array>(shared_from_this());
-        }
-        else
-        {
-            return nullptr;
-        }
+        return this->template value<U>();
     }
 
-    std::shared_ptr<const array> as_array() const
+    template <typename T>
+    std::enable_if_t<is_one_of_v<std::remove_cv_t<T>, array, table>, std::shared_ptr<T>> as()
     {
-        if (is_array())
+        if (is_array() || is_table())
         {
-            return std::static_pointer_cast<const toml::array>(shared_from_this());
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
-
-    std::shared_ptr<table> as_table()
-    {
-        if (is_table())
-        {
-            return std::static_pointer_cast<toml::table>(shared_from_this());
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
-
-    std::shared_ptr<const table> as_table() const
-    {
-        if (is_table())
-        {
-            return std::static_pointer_cast<const toml::table>(shared_from_this());
+            return std::static_pointer_cast<std::remove_cv_t<T>>(shared_from_this());
         }
         else
         {
@@ -127,7 +101,17 @@ public:
     }
 
     template <typename T>
-    inline std::optional<T> value() const noexcept; // implemented in toml_value.h
+    std::enable_if_t<is_one_of_v<std::remove_cv_t<T>, array, table>, std::shared_ptr<std::add_const_t<T>>> as() const
+    {
+        if (is_array() || is_table())
+        {
+            return std::static_pointer_cast<std::add_const_t<T>>(shared_from_this());
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
 
     template <typename T, typename U = typename value_type_traits<std::decay_t<T>>::type>
     inline auto value_or(T &&default_value) const noexcept
@@ -155,62 +139,37 @@ public:
               typename = std::enable_if_t<!std::is_void_v<U>>>
     std::optional<U> map(F &&f) const
     {
-        if constexpr (is_value_promotable<T>)
-        {
-            if (const auto val = this->template value<T>())
-            {
-                return {f(val.value())};
-            }
-        }
-        else if constexpr (std::is_same_v<T, array>)
-        {
-            if (const auto arr = this->as_array())
-            {
-                return {f(*arr)};
-            }
-        }
-        else if constexpr (std::is_same_v<T, table>)
-        {
-            if (const auto tbl = this->as_table())
-            {
-                return {f(*tbl)};
-            }
-        }
-        else if constexpr (std::is_same_v<T, node_view>)
+        if constexpr (std::is_same_v<T, node_view>)
         {
             return {f(this->view())};
         }
-        return std::nullopt;
+        else
+        {
+            if (const auto val = this->template as<T>())
+            {
+                return {f(*val)};
+            }
+            else
+            {
+                return std::nullopt;
+            }
+        }
     }
 
     template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
               typename = std::enable_if_t<std::is_void_v<U>>>
     void map(F &&f) const
     {
-        if constexpr (is_value_promotable<T>)
+        if constexpr (std::is_same_v<T, node_view>)
         {
-            if (const auto val = this->template value<T>())
+            f(this->view());
+        }
+        else
+        {
+            if (const auto val = this->template as<T>())
             {
                 f(val.value());
             }
-        }
-        else if constexpr (std::is_same_v<T, array>)
-        {
-            if (const auto arr = this->as_array())
-            {
-                f(*arr);
-            }
-        }
-        else if constexpr (std::is_same_v<T, table>)
-        {
-            if (const auto tbl = this->as_table())
-            {
-                f(*tbl);
-            }
-        }
-        else if constexpr (std::is_same_v<T, node_view>)
-        {
-            f(this->view());
         }
     }
 
@@ -268,12 +227,12 @@ void node::accept(Visitor &&visitor, Args &&... args) const
     }
     else if (is_table())
     {
-        visitor.visit(static_cast<const toml::table &>(*as_table()),
+        visitor.visit(static_cast<const toml::table &>(*as<table>()),
                       std::forward<Args>(args)...);
     }
     else if (is_array())
     {
-        visitor.visit(static_cast<const toml::array &>(*as_array()),
+        visitor.visit(static_cast<const toml::array &>(*as<array>()),
                       std::forward<Args>(args)...);
     }
 }

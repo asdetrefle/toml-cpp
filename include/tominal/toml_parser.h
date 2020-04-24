@@ -294,7 +294,7 @@ private:
                 if (b->is_table())
                     curr_table = static_cast<table *>(b.get());
                 else if (b->is_table_array())
-                    curr_table = b->as_array()->back()->as_table().get();
+                    curr_table = b->as<array>()->back()->as<table>().get();
                 else
                     throw_parse_exception("Key " + full_table_name + "already exists as a value");
             }
@@ -377,17 +377,17 @@ private:
                         throw_parse_exception("key `" + full_ta_name + "` is not a table array");
                     }
 
-                    auto v = b->as_array();
+                    auto v = b->as<array>();
                     for (auto it = v->begin(); it != v->end(); ++it)
                     {
-                        if ((*it)->as_table()->is_inline())
+                        if ((*it)->as<table>()->is_inline())
                         {
                             throw_parse_exception("static table array `" + full_ta_name + "` cannot be appended to");
                         }
                     }
 
                     v->push_back(make_table());
-                    curr_table = v->back()->as_table().get();
+                    curr_table = v->back()->as<table>().get();
                 }
                 // otherwise, just keep traversing down the key name
                 else
@@ -395,7 +395,7 @@ private:
                     if (b->is_table())
                         curr_table = static_cast<table *>(b.get());
                     else if (b->is_table_array())
-                        curr_table = b->as_array()->back()->as_table().get();
+                        curr_table = b->as<array>()->back()->as<table>().get();
                     else
                         throw_parse_exception("Key " + full_ta_name + " already exists as a value");
                 }
@@ -410,7 +410,7 @@ private:
                     auto arr = make_array();
                     arr->push_back(make_table());
                     auto [it, success] = curr_table->emplace(part, std::move(arr));
-                    curr_table = it->second->as_array()->back()->as_table().get();
+                    curr_table = it->second->as<array>()->back()->as<table>().get();
                 }
                 // otherwise, create the implicitly defined table and move
                 // down to it
@@ -459,7 +459,7 @@ private:
             else
             {
                 auto [it, success] = curr_table->emplace(part, make_table());
-                curr_table = it->second->as_table().get();
+                curr_table = it->second->as<table>().get();
             }
         };
 

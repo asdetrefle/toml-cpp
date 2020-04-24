@@ -147,30 +147,23 @@ public:
         std::vector<U> result;
         for (const auto &n : nodes_)
         {
-            if constexpr (is_value_promotable<T>)
+            if constexpr (std::is_same_v<T, node_view>)
             {
-                if (const auto val = n->template value<U>())
-                {
-                    result.emplace_back(val.value());
-                }
+                result.emplace_back(n->view());
             }
-            else if constexpr (std::is_same_v<T, array>)
+            else if constexpr (is_one_of_v<T, array, table>)
             {
-                if (const auto arr = n->as_array())
+                if (const auto arr = n->template as<T>())
                 {
                     result.emplace_back(std::move(arr));
                 }
             }
-            else if constexpr (std::is_same_v<T, table>)
+            else if constexpr (is_value_promotable<std::decay_t<T>>)
             {
-                if (const auto tbl = n->as_table())
+                if (const auto val = n->template as<U>())
                 {
-                    result.emplace_back(std::move(tbl));
+                    result.emplace_back(val.value());
                 }
-            }
-            else if constexpr (std::is_same_v<T, node_view>)
-            {
-                result.emplace_back(n->view());
             }
         }
         return result;

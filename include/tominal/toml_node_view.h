@@ -64,19 +64,16 @@ public:
         return node_ ? node_->template as_value<T>() : nullptr;
     }
 
-    auto as_array() const
+    template <class T>
+    auto as() const
     {
-        return node_ ? node_->as_array() : nullptr;
-    }
-
-    auto as_table() const
-    {
-        return node_ ? node_->as_table() : nullptr;
+        using return_type = decltype(node_->template as<T>());
+        return node_ ? node_->as<T>() : return_type{};
     }
 
     bool contains(std::string_view key) const
     {
-        if (auto tbl = as_table())
+        if (auto tbl = as<table>())
         {
             return tbl->contains(key);
         }
@@ -86,29 +83,17 @@ public:
         }
     }
 
-    template <typename U>
-    std::optional<U> value() const noexcept
+    template <typename T>
+    std::optional<T> value() const noexcept
     {
         if (node_)
         {
-            return node_->template value<U>();
+            return node_->template value<T>();
         }
         else
         {
             return {};
         }
-    }
-
-    template <typename U>
-    auto expect() const
-    {
-        auto val = this->template value<U>();
-
-        if (!val)
-        {
-            throw std::runtime_error("toml::node_view is expecting a missing value");  
-        }
-        return val.value();
     }
 
     template <typename T>
@@ -126,7 +111,7 @@ public:
     }
 
     template <typename T>
-    inline auto value_or_default() const noexcept
+    auto value_or_default() const noexcept
     {
         using return_type = decltype(node_->value_or_default<T>());
 
@@ -138,7 +123,7 @@ public:
         node_view result{nullptr};
         auto position = key.find('.');
 
-        if (auto tbl = this->as_table())
+        if (auto tbl = this->as<table>())
         {
             result = node_view(tbl->at(key.substr(0, position)));
         }
@@ -155,7 +140,7 @@ public:
 
     node_view operator[](size_t index) const
     {
-        if (auto arr = this->as_array())
+        if (auto arr = this->as<array>())
         {
             return {(*arr)[index]};
         }
@@ -185,7 +170,7 @@ public:
     template <typename T, typename U = typename value_type_traits<T>::type>
     std::vector<U> collect() const
     {
-        if (auto arr = this->as_array())
+        if (auto arr = this->as<array>())
         {
             return arr->template collect<T>();
         }
@@ -199,7 +184,7 @@ public:
               typename = std::enable_if_t<!std::is_void_v<U>>>
     std::vector<U> map_collect(F &&f) const
     {
-        if (auto arr = this->as_array())
+        if (auto arr = this->as<array>())
         {
             return arr->template map_collect<T>(f);
         }
