@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14.0)
-project(tominal VERSION 0.1)
+project(toml VERSION 0.1)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -12,12 +12,12 @@ set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 option(TOML_BUILD_EXAMPLE "Build examples" OFF)
 option(TOML_BUILD_TEST "Build tests" ON)
 
-add_library(tominal INTERFACE)
+add_library(toml INTERFACE)
 target_include_directories(
-    tominal INTERFACE
+    toml INTERFACE
     "${PROJECT_SOURCE_DIR}/include"
 )
-target_compile_features(tominal INTERFACE cxx_std_17)
+target_compile_features(toml INTERFACE cxx_std_17)
 
 if(TOML_BUILD_TEST)
     include(FetchContent)

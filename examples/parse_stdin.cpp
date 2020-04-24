@@ -1,6 +1,6 @@
 #include <iostream>
 #include <limits>
-#include "tominal/toml.h"
+#include "toml/toml.h"
 
 /**
  * A visitor for toml objects that writes to an output stream in the JSON

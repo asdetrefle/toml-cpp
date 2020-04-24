@@ -1,5 +1,5 @@
-# tominal - Minimal TOML parser and writer
-[![Build Status](https://travis-ci.com/asdetrefle/tominal.svg?branch=master)](https://travis-ci.com/github/asdetrefle/tominal)
+# toml-cpp - Minimal TOML parser and writer
+[![Build Status](https://travis-ci.com/asdetrefle/toml-cpp.svg?branch=master)](https://travis-ci.com/asdetrefle/toml-cpp.svg?branch=master)
 
 A header-only C++17 library for parsing and writing [TOML][toml] configuration files. Targets: [TOML v1.0.0-rc.1][currver].
 
@@ -21,7 +21,7 @@ C++ Alternatives:
 To parse a TOML document from a file, you can do the following:
 
 ```cpp
-#include "tominal/toml.h"
+#include "toml/toml.h"
 
 // ## Parsing
 // `parse_file()` returns a `node_view` of a `toml::table`, which owns
@@ -72,7 +72,7 @@ and now it is much easier to get the same vector:
 auto v = config["clients"][0]["data"][1].collect<int>();
 ```
 
-tominal has extended support for dates and times beyond the TOML v0.4.0
+toml-cpp has extended support for dates and times beyond the TOML v0.4.0
 spec. Specifically, it supports
 
 - Local Date (`local_date`), which simply represents a date and lacks any time

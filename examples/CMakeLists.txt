@@ -8,10 +8,10 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 add_executable(parse parse.cpp)
-target_link_libraries(parse tominal)
+target_link_libraries(parse toml)
 
 add_executable(toml-parser parse_stdin.cpp)
-target_link_libraries(toml-parser tominal)
+target_link_libraries(toml-parser toml)
 
 if(FALSE)
 add_executable(cpptoml-build build_toml.cpp)

@@ -14,7 +14,7 @@ add_executable(toml_test
 
 target_link_libraries(
     toml_test
-    tominal
+    toml
     gtest_main
 )
 

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "tominal/toml.h"
+#include "toml/toml.h"
 
 int main(int argc, char** argv)
 {
