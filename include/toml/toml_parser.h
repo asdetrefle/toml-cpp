@@ -291,7 +291,7 @@ private:
             if (curr_table->contains(part))
             {
                 auto b = curr_table->at(part);
-                if (b->is_table())
+                if (b->is<table>())
                     curr_table = static_cast<table *>(b.get());
                 else if (b->is_table_array())
                     curr_table = b->as<array>()->back()->as<table>().get();
@@ -392,7 +392,7 @@ private:
                 // otherwise, just keep traversing down the key name
                 else
                 {
-                    if (b->is_table())
+                    if (b->is<table>())
                         curr_table = static_cast<table *>(b.get());
                     else if (b->is_table_array())
                         curr_table = b->as<array>()->back()->as<table>().get();
@@ -447,7 +447,7 @@ private:
             if (curr_table->contains(part))
             {
                 auto val = curr_table->at(part);
-                if (val->is_table())
+                if (val->is<table>())
                 {
                     curr_table = static_cast<table *>(val.get());
                 }

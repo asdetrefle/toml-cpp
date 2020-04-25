@@ -42,7 +42,7 @@ public:
 
         for (const auto &i : t)
         {
-            if (i.second->is_table())
+            if (i.second->is<table>())
             {
                 tables.push_back(i.first);
             }
@@ -112,7 +112,7 @@ public:
                 if (i > 0)
                     write(", ");
 
-                if (auto n = a.at(i); n->is_array())
+                if (auto n = a.at(i); n->is<array>())
                 {
                     n->as<array>()->accept(*this, true);
                 }
@@ -284,7 +284,7 @@ protected:
      */
     void write_table_item_header(const node &b)
     {
-        if (!b.is_table() && !b.is_table_array())
+        if (!b.is<table>() && !b.is_table_array())
         {
             indent();
 

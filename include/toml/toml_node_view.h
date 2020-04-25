@@ -32,25 +32,25 @@ public:
         return *node_;
     }
 
+    template <typename T>
+    bool is() const noexcept
+    {
+        return node_ && node_->template is<T>();
+    }
+
     bool is_value() const noexcept
     {
         return node_ && node_->is_value();
     }
 
-    template <typename T>
-    bool is_value() const noexcept
-    {
-        return node_ && node_->template is_value<T>();
-    }
-
     bool is_table() const noexcept
     {
-        return node_ && node_->is_table();
+        return node_ && node_->is<table>();
     };
 
     bool is_array() const noexcept
     {
-        return node_ && node_->is_array();
+        return node_ && node_->is<array>();
     }
 
     bool is_table_array() const noexcept
@@ -73,27 +73,21 @@ public:
 
     bool contains(std::string_view key) const
     {
-        if (auto tbl = as<table>())
+        auto position = key.find('.');
+        if (position != std::string_view::npos && position + 1 < key.size())
         {
-            return tbl->contains(key);
+            return (*this)[key.substr(0, position)].contains(key.substr(position + 1));
         }
         else
         {
-            return false;
+            return bool((*this)[key.substr(0, position)]);
         }
     }
 
     template <typename T>
     std::optional<T> value() const noexcept
     {
-        if (node_)
-        {
-            return node_->template value<T>();
-        }
-        else
-        {
-            return {};
-        }
+        return node_ ? node_->template value<T>() : std::nullopt;
     }
 
     template <typename T>
@@ -114,7 +108,6 @@ public:
     auto value_or_default() const noexcept
     {
         using return_type = decltype(node_->value_or_default<T>());
-
         return node_ ? node_->value_or_default<T>() : return_type{};
     }
 

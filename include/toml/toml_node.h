@@ -25,26 +25,32 @@ public:
         return type_;
     }
 
-    bool is_value() const noexcept
+    template <typename T>
+    bool is() const noexcept
     {
-        return static_cast<uint8_t>(type_) > 0 &&
-               static_cast<uint8_t>(type_) < 9;
+        if constexpr (std::is_same_v<T, array>)
+        {
+            return type_ == base_type::Array || type_ == base_type::TableArray;
+        }
+        else
+        {
+            return type_ == value_type_traits<T>::value;
+        }
     }
 
-    template <typename T>
     bool is_value() const noexcept
     {
-        return is_value() && type_ == value_type_traits<T>::value;
+        return static_cast<uint8_t>(type_) > 0 && static_cast<uint8_t>(type_) < 9;
     }
 
     bool is_table() const noexcept
     {
-        return type_ == base_type::Table;
+        return this->is<table>();
     };
 
     bool is_array() const noexcept
     {
-        return type_ == base_type::Array || type_ == base_type::TableArray;
+        return this->is<array>();
     }
 
     virtual bool is_table_array() const noexcept
@@ -90,7 +96,7 @@ public:
     template <typename T>
     std::enable_if_t<is_one_of_v<std::remove_cv_t<T>, array, table>, std::shared_ptr<T>> as()
     {
-        if (is_array() || is_table())
+        if (is<array>() || is<table>())
         {
             return std::static_pointer_cast<std::remove_cv_t<T>>(shared_from_this());
         }
@@ -103,7 +109,7 @@ public:
     template <typename T>
     std::enable_if_t<is_one_of_v<std::remove_cv_t<T>, array, table>, std::shared_ptr<std::add_const_t<T>>> as() const
     {
-        if (is_array() || is_table())
+        if (is<array>() || is<table>())
         {
             return std::static_pointer_cast<std::add_const_t<T>>(shared_from_this());
         }
@@ -225,12 +231,12 @@ void node::accept(Visitor &&visitor, Args &&... args) const
         value_acceptor::accept(*this, std::forward<Visitor>(visitor),
                                std::forward<Args>(args)...);
     }
-    else if (is_table())
+    else if (is<table>())
     {
         visitor.visit(static_cast<const toml::table &>(*as<table>()),
                       std::forward<Args>(args)...);
     }
-    else if (is_array())
+    else if (is<array>())
     {
         visitor.visit(static_cast<const toml::array &>(*as<array>()),
                       std::forward<Args>(args)...);
