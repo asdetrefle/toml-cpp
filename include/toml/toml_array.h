@@ -189,10 +189,16 @@ public:
         nodes_.emplace_back(n);
     }
 
-    template <typename T, typename = std::enable_if_t<toml::is_value_promotable<T>>>
-    void emplace_back(T &&val)
+    template <typename T>
+    std::enable_if_t<toml::is_value_promotable<T>> emplace_back(T &&val)
     {
         nodes_.emplace_back(make_value(std::forward<T>(val)));
+    }
+
+    template <typename T>
+    std::enable_if_t<std::is_convertible_v<T, std::shared_ptr<node>>> emplace_back(T &&val)
+    {
+        nodes_.emplace_back(std::forward<T>(val));
     }
 
     void pop_back()

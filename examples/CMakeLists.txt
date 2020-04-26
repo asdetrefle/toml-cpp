@@ -13,18 +13,8 @@ target_link_libraries(parse toml)
 add_executable(toml-parser parse_stdin.cpp)
 target_link_libraries(toml-parser toml)
 
-if(FALSE)
-add_executable(cpptoml-build build_toml.cpp)
-target_link_libraries(cpptoml-build cpptoml)
-set_target_properties(cpptoml-build PROPERTIES
-  CXX_STANDARD 11
-  CXX_EXTENSIONS OFF
-  CXX_STANDARD_REQUIRED YES)
+add_executable(toml-build build_toml.cpp)
+target_link_libraries(toml-build toml)
 
-add_executable(cpptoml-conversions conversions.cpp)
-target_link_libraries(cpptoml-conversions cpptoml)
-set_target_properties(cpptoml-conversions PROPERTIES
-  CXX_STANDARD 11
-  CXX_EXTENSIONS OFF
-  CXX_STANDARD_REQUIRED YES)
-endif()
+add_executable(toml-conversions conversions.cpp)
+target_link_libraries(toml-conversions toml)

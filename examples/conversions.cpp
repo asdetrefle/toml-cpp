@@ -1,60 +1,64 @@
 #include <cstdint>
 #include <iostream>
-
-#include "cpptoml.h"
+#include "toml/toml.h"
 
 int main()
 {
-    auto root = cpptoml::make_table();
+    auto root = toml::make_table();
 
-    root->insert("small-integer", int64_t{12});
+    root->emplace("small-integer", int64_t{12});
 
-    auto si = *root->get_as<int8_t>("small-integer");
-
-    root->insert("small-integer2", si);
-
-    try
-    {
-        root->insert("too-big", std::numeric_limits<uint64_t>::max());
-    }
-    catch (std::overflow_error&)
-    {
-    }
-
-    root->insert("medium-integer", std::numeric_limits<int32_t>::max());
+    auto si = root->at("small-integer")->as<int16_t>().value();
+    std::cout << "small-integer " << si << " type converted " << typeid(si).name() << std::endl;
+    root->emplace("small-integer2", si);
 
     try
     {
-        root->get_as<int16_t>("medium-integer");
+        root->emplace("too-big", std::numeric_limits<uint64_t>::max());
+        auto tb = root->at("too-big")->as<int64_t>().value();
+        std::cout << "too-big " << tb << std::endl;
     }
-    catch (std::overflow_error&)
+    catch (std::overflow_error &e)
     {
+        std::cerr << "too-big overflow catched " << e.what() << std::endl;
     }
 
-    root->get_as<uint32_t>("medium-integer"); // signed as unsigned, checked
+    root->emplace("medium-integer", std::numeric_limits<int32_t>::max());
+    try
+    {
+        auto mi = root->at("medium-integer")->as<int16_t>().value();
+        std::cout << "medium-integer " << mi << std::endl;
+    }
+    catch (std::overflow_error &e)
+    {
+        std::cerr << "medium-integer overflow catched " << e.what() << std::endl;
+    }
 
-    root->insert("medium-negative", std::numeric_limits<int32_t>::min());
+    auto mi = root->at("medium-integer")->as<uint32_t>().value(); // signed as unsigned, checked
+    std::cout << "medium-integer unsigned " << mi << std::endl;
+
+    root->emplace("medium-negative", std::numeric_limits<int32_t>::min());
 
     try
     {
-        root->get_as<int16_t>("medium-negative");
+        root->at("medium-negative")->as<int16_t>();
     }
-    catch (std::underflow_error&)
+    catch (std::underflow_error & e)
     {
+        std::cerr << "medium-negative underflow catched " << e.what() << std::endl;
     }
 
     try
     {
-        root->get_as<uint64_t>("medium-negative");
+        root->at("medium-negative")->as<uint64_t>();
     }
-    catch (std::underflow_error&)
+    catch (std::underflow_error &e)
     {
+        std::cerr << "medium-negative underflow catched " << e.what() << std::endl;
     }
 
-    root->get_as<int64_t>("medium-negative");
-
-    root->insert("float", 0.1f);
-    root->get_as<double>("float");
+    root->emplace("float", 0.1f);
+    std::cout << "float as double " << root->at("float")->as<double>().value() << std::endl;
 
     return 0;
 }

@@ -110,10 +110,12 @@ struct value_type_traits
 
 template <class T>
 struct value_type_traits<T, typename std::enable_if_t<is_one_of_v<remove_cvref_t<T>,
+                                                                  long, // for macOS
                                                                   int32_t,
                                                                   int16_t,
                                                                   int8_t,
                                                                   uint64_t,
+                                                                  unsigned long, // for macOS
                                                                   uint32_t,
                                                                   uint16_t,
                                                                   uint8_t>>>
