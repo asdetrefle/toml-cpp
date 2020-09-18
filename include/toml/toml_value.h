@@ -68,98 +68,63 @@ inline std::optional<T> node::value() const noexcept
     static_assert(toml::is_value_promotable<T>,
                   "value type must be one of the TOML value types (or string_view)");
 
-    switch (type())
+    if constexpr (value_type_traits<T>::value == base_type::Float)
     {
-    case base_type::String:
-    {
-        if constexpr (value_type_traits<T>::value == base_type::String)
-            return {T{as_value<std::string>()->get()}};
-        else
-            return std::nullopt;
-    }
-    case base_type::Integer:
-    {
-        if constexpr (value_type_traits<T>::value == base_type::Integer ||
-                      value_type_traits<T>::value == base_type::Float)
+        if (auto candidate = as_value<double>())
         {
-            return {static_cast<T>(as_value<int64_t>()->get())};
+            return {static_cast<T>(candidate->get())};
+        }
+        else if (auto candidate = as_value<int64_t>())
+        {
+            return {static_cast<T>(candidate->get())};
         }
         else
         {
             return std::nullopt;
         }
     }
-    case base_type::Float:
+    else if constexpr (value_type_traits<T>::value == base_type::String)
     {
-        if constexpr (value_type_traits<T>::value == base_type::Float)
+        if (auto candidate = as_value<typename value_type_traits<T>::base_type>())
         {
-            return {static_cast<T>(as_value<double>()->get())};
+            return {T{candidate->get()}};
         }
         else
         {
             return std::nullopt;
         }
     }
-    case base_type::Boolean:
+    else if constexpr (value_type_traits<T>::value == base_type::LocalDateTime ||
+                       value_type_traits<T>::value == base_type::LocalDate)
     {
-        if constexpr (value_type_traits<T>::value == base_type::Boolean)
+        if (auto candidate = as_value<offset_date_time>())
         {
-            return {as_value<bool>()->get()};
+            return {static_cast<T>(candidate->get())};
+        }
+        else if (auto candidate = as_value<local_date_time>())
+        {
+            return {static_cast<T>(candidate->get())};
+        }
+        else if (auto candidate = as_value<local_date>();
+                 candidate && value_type_traits<T>::value == base_type::LocalDate)
+        {
+            return {candidate->get()};
         }
         else
         {
             return std::nullopt;
         }
     }
-    case base_type::LocalDate:
+    else
     {
-        if constexpr (value_type_traits<T>::value == base_type::LocalDate)
+        if (auto candidate = as_value<typename value_type_traits<T>::base_type>())
         {
-            return {as_value<local_date>()->get()};
+            return {static_cast<T>(candidate->get())};
         }
         else
         {
             return std::nullopt;
         }
-    }
-    case base_type::LocalTime:
-    {
-        if constexpr (value_type_traits<T>::value == base_type::LocalTime)
-        {
-            return {as_value<local_time>()->get()};
-        }
-        else
-        {
-            return std::nullopt;
-        }
-    }
-    case base_type::LocalDateTime:
-    {
-        if constexpr (value_type_traits<T>::value == base_type::LocalDateTime ||
-                      value_type_traits<T>::value == base_type::LocalDate)
-        {
-            return {static_cast<T>(as_value<local_date_time>()->get())};
-        }
-        else
-        {
-            return std::nullopt;
-        }
-    }
-    case base_type::OffsetDateTime:
-    {
-        if constexpr (value_type_traits<T>::value == base_type::OffsetDateTime ||
-                      value_type_traits<T>::value == base_type::LocalDateTime ||
-                      value_type_traits<T>::value == base_type::LocalDate)
-        {
-            return {static_cast<T>(as_value<offset_date_time>()->get())};
-        }
-        else
-        {
-            return std::nullopt;
-        }
-    }
-    default:
-        return std::nullopt;
     }
 }
 

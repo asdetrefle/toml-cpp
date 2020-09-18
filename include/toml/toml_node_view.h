@@ -58,19 +58,6 @@ public:
         return node_ && node_->is_table_array();
     }
 
-    template <class T>
-    auto as_value() const
-    {
-        return node_ ? node_->template as_value<T>() : nullptr;
-    }
-
-    template <class T>
-    auto as() const
-    {
-        using return_type = decltype(node_->template as<T>());
-        return node_ ? node_->as<T>() : return_type{};
-    }
-
     bool contains(std::string_view key) const
     {
         auto position = key.find('.');
@@ -84,10 +71,24 @@ public:
         }
     }
 
-    template <typename T>
-    std::optional<T> value() const noexcept
+    template <class T>
+    auto as_value() const
     {
-        return node_ ? node_->template value<T>() : std::nullopt;
+        return node_ ? node_->template as_value<T>() : nullptr;
+    }
+
+    template <class T>
+    auto as() const
+    {
+        using return_type = decltype(node_->template as<T>());
+        return node_ ? node_->as<T>() : return_type{};
+    }
+
+    template <class T>
+    auto as()
+    {
+        using return_type = decltype(node_->template as<T>());
+        return node_ ? node_->as<T>() : return_type{};
     }
 
     template <typename T>

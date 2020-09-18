@@ -84,17 +84,28 @@ public:
         }
     }
 
-    template <typename T>
-    inline std::optional<T> value() const noexcept; // implemented in toml_value.h
-
-    template <typename T, typename U = typename value_type_traits<std::decay_t<T>>::type>
-    std::enable_if_t<is_value_promotable<std::decay_t<T>>, std::optional<U>> as() const
+    template <typename T, typename = std::enable_if_t<value_type_traits<std::decay_t<T>>::value != base_type::None>>
+    inline auto as() const
     {
-        return this->template value<U>();
+        if constexpr (is_one_of_v<std::remove_cv_t<T>, array, table>)
+        {
+            if (is<array>() || is<table>())
+            {
+                return std::static_pointer_cast<std::add_const_t<T>>(shared_from_this());
+            }
+            else
+            {
+                return std::shared_ptr<std::add_const_t<T>>();
+            }
+        }
+        else
+        {
+            return this->template value<typename value_type_traits<std::decay_t<T>>::type>();
+        }
     }
 
-    template <typename T>
-    std::enable_if_t<is_one_of_v<std::remove_cv_t<T>, array, table>, std::shared_ptr<T>> as()
+    template <typename T, typename = std::enable_if_t<is_one_of_v<std::remove_cv_t<T>, array, table>>>
+    inline auto as()
     {
         if (is<array>() || is<table>())
         {
@@ -102,20 +113,7 @@ public:
         }
         else
         {
-            return nullptr;
-        }
-    }
-
-    template <typename T>
-    std::enable_if_t<is_one_of_v<std::remove_cv_t<T>, array, table>, std::shared_ptr<std::add_const_t<T>>> as() const
-    {
-        if (is<array>() || is<table>())
-        {
-            return std::static_pointer_cast<std::add_const_t<T>>(shared_from_this());
-        }
-        else
-        {
-            return nullptr;
+            return std::shared_ptr<std::remove_cv_t<T>>();
         }
     }
 
@@ -190,6 +188,9 @@ protected:
 
 private:
     base_type type_{base_type::None};
+
+    template <typename T>
+    inline std::optional<T> value() const noexcept; // implemented in toml_value.h
 };
 
 template <class... Ts>
