@@ -26,7 +26,7 @@ enabled = true
 [[clients]] # array of tables
 data = [ ["gamma", "delta"], [1, 2]]
 
-[[clients]] 
+[[clients]]
 hosts = [
   { name = "alpha" }, # Line breaks are OK when inside arrays
   "omega", # trailing comma and mixed type both allowd in array

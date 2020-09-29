@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <iostream>
 #include "gtest/gtest.h"
 #include "toml/toml.h"
@@ -9,13 +10,14 @@ using namespace toml;
 
 TEST(toml_test, parse_example)
 {
-    auto view = parse_file("../examples/example.toml").ok();
+    auto current_dir = std::filesystem::path(__FILE__).parent_path();
+    auto view = parse_file(current_dir / "../examples/example.toml").ok();
 
     EXPECT_TRUE(bool(view));
     EXPECT_EQ(view["title"].value_or_default<std::string_view>(), "TOML Example"sv);
-    EXPECT_EQ(view["owner"]["name"].value_or("Tom"sv), "Tom Preston-Werner"sv);
 
     EXPECT_TRUE(view.contains("owner"));
+    EXPECT_EQ(view["owner"]["name"].value_or("Tom"sv), "Tom Preston-Werner"sv);
     EXPECT_TRUE(view["owner"]["dob"].map<offset_date_time>([](const auto &val) {
                                         return val.year == 1979 &&
                                                val.day == 27 &&
