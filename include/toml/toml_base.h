@@ -93,6 +93,7 @@ struct base_type_traits<array>
 };
 
 #if __cplusplus >= 201711L
+template <typename T>
 using remove_cvref_t = std::remove_cvref_t<T>;
 #else
 template <typename T>

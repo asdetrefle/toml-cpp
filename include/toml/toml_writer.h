@@ -1,6 +1,8 @@
 #pragma once
 
 #include <algorithm>
+#include <limits>
+
 #include "toml_value.h"
 #include "toml_array.h"
 #include "toml_table.h"

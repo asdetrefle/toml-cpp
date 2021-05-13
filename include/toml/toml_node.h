@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+
 #include "toml_base.h"
 
 namespace toml

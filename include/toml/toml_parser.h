@@ -3,9 +3,11 @@
 #include <cctype>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <variant>
+
 #include "toml_base.h"
 #include "toml_date_time.h"
 #include "toml_table.h"
