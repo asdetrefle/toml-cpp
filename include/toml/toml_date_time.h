@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <iomanip>
 
 #include "toml_base.h"
@@ -13,6 +14,17 @@ struct local_date
     uint16_t year{0};
     uint8_t month{0};
     uint8_t day{0};
+
+    local_date() = default;
+
+#if __cplusplus >= 201711L
+    local_date(const std::chrono::year_month_day &ymd)
+        : year(static_cast<uint16_t>(int(ymd.year()))),
+          month(static_cast<uint8_t>(unsigned(ymd.month()))),
+          day(static_cast<uint8_t>(unsigned(ymd.day())))
+    {
+    }
+#endif
 };
 
 struct local_time
@@ -21,6 +33,21 @@ struct local_time
     uint8_t minute{0};      // from 0 - 59.
     uint8_t second{0};      // from 0 - 60.
     uint32_t nanosecond{0}; // from 0 - 999999999.
+
+    local_time() = default;
+
+#if __cplusplus >= 201711L
+    template <class Duration>
+    local_time(const std::chrono::hh_mm_ss<Duration> &hms)
+        : hour(static_cast<uint8_t>(hms.hour().count())),
+          minute(static_cast<uint8_t>(hms.minute().count())),
+          second(static_cast<uint8_t>(hms.second().count())),
+          nanosecond(static_cast<uint32_t>(
+              std::chrono::duration_cast<std::chrono::nanoseconds>(hms.subsecond())
+                  .count()))
+    {
+    }
+#endif
 };
 
 struct time_offset
