@@ -54,9 +54,13 @@ public:
             }
         }
 
-        std::sort(values.begin(), values.end(), [&](const auto &lhs, const auto &rhs) {
-            return t.at(lhs)->is_table_array() < t.at(rhs)->is_table_array() ? true : lhs < rhs;
-        });
+        std::sort(values.begin(), values.end(),
+                  [&](const auto &lhs, const auto &rhs)
+                  {
+                      return t.at(lhs)->is_table_array() < t.at(rhs)->is_table_array()
+                                 ? true
+                                 : lhs < rhs;
+                  });
 
         for (size_t i = 0; i < values.size(); ++i)
         {
@@ -201,12 +205,15 @@ protected:
            << v.get();
 
         auto double_str = ss.str();
-        auto pos = double_str.find("e0");
-        if (pos != std::string::npos)
-            double_str.replace(pos, 2, "e");
-        pos = double_str.find("e-0");
-        if (pos != std::string::npos)
-            double_str.replace(pos, 3, "e-");
+
+        if (auto pos = double_str.find("e0"); pos != std::string::npos)
+        {
+            double_str.erase(pos + 1, 1);
+        }
+        if (auto pos = double_str.find("e-0"); pos != std::string::npos)
+        {
+            double_str.erase(pos + 2, 1);
+        }
 
         stream_ << double_str;
         has_naked_endline_ = false;
