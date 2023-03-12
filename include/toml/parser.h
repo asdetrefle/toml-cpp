@@ -8,10 +8,10 @@
 #include <stdexcept>
 #include <variant>
 
-#include "toml_base.h"
-#include "toml_date_time.h"
-#include "toml_table.h"
-#include "toml_node_view.h"
+#include "base.h"
+#include "date_time.h"
+#include "table.h"
+#include "node_view.h"
 
 namespace toml
 {

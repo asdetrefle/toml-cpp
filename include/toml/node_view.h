@@ -1,9 +1,9 @@
 #pragma once
 
-#include "toml_node.h"
-#include "toml_value.h"
-#include "toml_array.h"
-#include "toml_table.h"
+#include "node.h"
+#include "value.h"
+#include "array.h"
+#include "table.h"
 
 namespace toml
 {
@@ -84,32 +84,20 @@ public:
         return node_ ? node_->as<T>() : return_type{};
     }
 
+    template <typename T>
+    auto as(T &&default_value) const noexcept
+    {
+        using return_type = decltype(node_->as(std::forward<T>(default_value)));
+        return node_
+                   ? node_->as(std::forward<T>(default_value))
+                   : return_type{std::forward<T>(default_value)};
+    }
+
     template <class T>
-    auto as()
+    auto get() const
     {
-        using return_type = decltype(node_->template as<T>());
-        return node_ ? node_->as<T>() : return_type{};
-    }
-
-    template <typename T>
-    auto value_or(T &&default_value) const noexcept
-    {
-        using return_type = decltype(node_->value_or(std::forward<T>(default_value)));
-        if (node_)
-        {
-            return node_->value_or(std::forward<T>(default_value));
-        }
-        else
-        {
-            return return_type{std::forward<T>(default_value)};
-        }
-    }
-
-    template <typename T>
-    auto value_or_default() const noexcept
-    {
-        using return_type = decltype(node_->value_or_default<T>());
-        return node_ ? node_->value_or_default<T>() : return_type{};
+        using return_type = decltype(node_->template get<T>());
+        return node_ ? node_->get<T>() : return_type{};
     }
 
     node_view operator[](std::string_view key) const
@@ -189,7 +177,7 @@ public:
     }
 
     template <class Visitor, class... Args>
-    void accept(Visitor &&visitor, Args &&... args) const
+    void accept(Visitor &&visitor, Args &&...args) const
     {
         if (node_)
         {

@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <limits>
 
-#include "toml_value.h"
-#include "toml_array.h"
-#include "toml_table.h"
-#include "toml_node_view.h"
+#include "value.h"
+#include "array.h"
+#include "table.h"
+#include "node_view.h"
 
 namespace toml
 {
@@ -106,7 +106,7 @@ public:
         {
             for (size_t i = 0; i < a.size(); ++i)
             {
-                a.at(i)->as<table>()->accept(*this, true);
+                a.at(i)->get<table>()->accept(*this, true);
             }
         }
         else
@@ -120,7 +120,7 @@ public:
 
                 if (auto n = a.at(i); n->is<array>())
                 {
-                    n->as<array>()->accept(*this, true);
+                    n->get<array>()->accept(*this, true);
                 }
                 else
                 {

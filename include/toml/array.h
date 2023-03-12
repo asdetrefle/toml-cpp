@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "toml_base.h"
-#include "toml_node.h"
+#include "base.h"
+#include "node.h"
 
 namespace toml
 {
@@ -161,7 +161,7 @@ public:
             }
             else if constexpr (is_value_promotable<std::decay_t<T>>)
             {
-                if (const auto val = n->template as<U>())
+                if (const auto val = n->template get<U>())
                 {
                     result.emplace_back(val.value());
                 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "toml_node.h"
+#include "node.h"
 
 namespace toml
 {

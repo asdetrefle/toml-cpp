@@ -7,14 +7,6 @@
 #include <string_view>
 #include <type_traits>
 
-#define TOML_STANDARD toml_1_0_0_rc1
-#define TOML_INLINE_NAMESPACE_NAME lts_2020_04_09
-
-#define TOML_NAMESPACE_BEGIN                    \
-    inline namespace TOML_INLINE_NAMESPACE_NAME \
-    {
-#define TOML_NAMESPACE_END }
-
 namespace toml
 {
 TOML_NAMESPACE_BEGIN

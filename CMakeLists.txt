@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.14.0)
-project(toml VERSION 0.1)
+cmake_minimum_required(VERSION 3.14)
+project(toml VERSION 0.2)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)

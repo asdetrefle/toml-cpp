@@ -1,7 +1,7 @@
 #pragma once
 
-#define TOML_STANDARD toml_1_0_0_rc1
-#define TOML_INLINE_NAMESPACE_NAME lts_2020_04_09
+#define TOML_STANDARD toml_1_0_0_rc2
+#define TOML_INLINE_NAMESPACE_NAME lts_2023_03_12
 
 #define TOML_NAMESPACE_BEGIN                    \
     inline namespace TOML_INLINE_NAMESPACE_NAME \
@@ -49,12 +49,12 @@ class parse_result;
 TOML_NAMESPACE_END
 } // namespace toml
 
-#include "toml_base.h"
-#include "toml_date_time.h"
-#include "toml_node.h"
-#include "toml_value.h"
-#include "toml_array.h"
-#include "toml_table.h"
-#include "toml_node_view.h"
-#include "toml_parser.h"
-#include "toml_writer.h"
+#include "base.h"
+#include "date_time.h"
+#include "node.h"
+#include "value.h"
+#include "array.h"
+#include "table.h"
+#include "node_view.h"
+#include "parser.h"
+#include "writer.h"

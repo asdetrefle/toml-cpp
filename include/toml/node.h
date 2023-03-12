@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-#include "toml_base.h"
+#include "base.h"
 
 namespace toml
 {
@@ -62,64 +62,38 @@ public:
     template <class T>
     std::shared_ptr<toml::value<T>> as_value()
     {
-        if (type() == base_type_traits<T>::value)
-        {
-            return std::static_pointer_cast<toml::value<T>>(shared_from_this());
-        }
-        else
-        {
-            return nullptr;
-        }
+        return type() == base_type_traits<T>::value
+                   ? std::static_pointer_cast<toml::value<T>>(shared_from_this())
+                   : nullptr;
     }
 
     template <class T>
     std::shared_ptr<const toml::value<T>> as_value() const
     {
-        if (type() == base_type_traits<T>::value)
-        {
-            return std::static_pointer_cast<const toml::value<T>>(shared_from_this());
-        }
-        else
-        {
-            return nullptr;
-        }
+        return type() == base_type_traits<T>::value
+                   ? std::static_pointer_cast<const toml::value<T>>(shared_from_this())
+                   : nullptr;
     }
 
     template <typename T, typename = std::enable_if_t<value_type_traits<std::decay_t<T>>::value != base_type::None>>
-    inline auto as() const
+    inline auto as()
     {
         if constexpr (is_one_of_v<std::remove_cv_t<T>, array, table>)
         {
-            if (is<array>() || is<table>())
+            if (!is<array>() && !is<table>())
             {
-                return std::static_pointer_cast<std::add_const_t<T>>(shared_from_this());
+                throw std::runtime_error("cannot convert toml::node to array or table");
             }
-            else
-            {
-                return std::shared_ptr<std::add_const_t<T>>();
-            }
-        }
-        else
-        {
-            return this->template value<typename value_type_traits<std::decay_t<T>>::type>();
-        }
-    }
-
-    template <typename T, typename = std::enable_if_t<is_one_of_v<std::remove_cv_t<T>, array, table>>>
-    inline auto as()
-    {
-        if (is<array>() || is<table>())
-        {
             return std::static_pointer_cast<std::remove_cv_t<T>>(shared_from_this());
         }
         else
         {
-            return std::shared_ptr<std::remove_cv_t<T>>();
+            return value<typename value_type_traits<std::decay_t<T>>::type>().value();
         }
     }
 
     template <typename T, typename U = typename value_type_traits<std::decay_t<T>>::type>
-    inline auto value_or(T &&default_value) const noexcept
+    inline auto as(T &&default_value) const noexcept
     {
         static_assert(is_value_promotable<std::decay_t<T>>,
                       "default value must be of (or be promotable to) one of the TOML types");
@@ -128,16 +102,22 @@ public:
         {
             return *val;
         }
-        else
-        {
-            return U{std::forward<T>(default_value)};
-        }
+        return U{std::forward<T>(default_value)};
     }
 
-    template <typename T, typename = std::enable_if_t<std::is_nothrow_default_constructible_v<T>>>
-    inline auto value_or_default() const noexcept
+    template <typename T, typename = std::enable_if_t<value_type_traits<std::decay_t<T>>::value != base_type::None>>
+    inline auto get() const
     {
-        return this->template value_or<T>({});
+        if constexpr (is_one_of_v<std::remove_cv_t<T>, array, table>)
+        {
+            return is<array>() || is<table>()
+                       ? std::static_pointer_cast<std::add_const_t<T>>(shared_from_this())
+                       : std::shared_ptr<std::add_const_t<T>>();
+        }
+        else
+        {
+            return value<typename value_type_traits<std::decay_t<T>>::type>();
+        }
     }
 
     template <typename T, typename F, typename U = std::invoke_result_t<F, const T &>,
@@ -150,7 +130,7 @@ public:
         }
         else
         {
-            if (const auto val = this->template as<T>())
+            if (const auto val = this->template get<T>())
             {
                 return {f(*val)};
             }
@@ -179,7 +159,7 @@ public:
     }
 
     template <class Visitor, class... Args>
-    void accept(Visitor &&visitor, Args &&... args) const;
+    void accept(Visitor &&visitor, Args &&...args) const;
 
 protected:
     node() noexcept = default;
@@ -208,7 +188,7 @@ template <class T, class... Ts>
 struct value_accept<T, Ts...>
 {
     template <class Visitor, class... Args>
-    static void accept(const node &b, Visitor &&visitor, Args &&... args)
+    static void accept(const node &b, Visitor &&visitor, Args &&...args)
     {
         if (auto v = b.as_value<T>())
         {
@@ -223,7 +203,7 @@ struct value_accept<T, Ts...>
 };
 
 template <class Visitor, class... Args>
-void node::accept(Visitor &&visitor, Args &&... args) const
+void node::accept(Visitor &&visitor, Args &&...args) const
 {
     if (is_value())
     {
@@ -235,12 +215,12 @@ void node::accept(Visitor &&visitor, Args &&... args) const
     }
     else if (is<table>())
     {
-        visitor.visit(static_cast<const toml::table &>(*as<table>()),
+        visitor.visit(static_cast<const toml::table &>(*get<table>()),
                       std::forward<Args>(args)...);
     }
     else if (is<array>())
     {
-        visitor.visit(static_cast<const toml::array &>(*as<array>()),
+        visitor.visit(static_cast<const toml::array &>(*get<array>()),
                       std::forward<Args>(args)...);
     }
 }

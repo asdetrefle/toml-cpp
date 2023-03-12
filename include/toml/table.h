@@ -1,7 +1,7 @@
 #pragma once
 
-#include "toml_base.h"
-#include "toml_node.h"
+#include "base.h"
+#include "node.h"
 
 namespace toml
 {
