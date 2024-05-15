@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cctype>
 #include <fstream>
 #include <functional>
@@ -136,7 +137,8 @@ public:
     void operator()(const char (&str)[N])
     {
         std::for_each(std::begin(str), std::end(str) - 1,
-                      [&](char c) { (*this)(c); });
+                      [&](char c)
+                      { (*this)(c); });
     }
 
     void eat_either(char a, char b)
@@ -252,7 +254,8 @@ private:
 #elif defined __GNUC__
     __attribute__((noreturn))
 #endif
-        void throw_parse_exception(const std::string &err)
+    void
+    throw_parse_exception(const std::string &err)
     {
         throw parse_error{err, line_number_};
     }
@@ -280,9 +283,11 @@ private:
         std::string full_table_name;
         bool inserted = false;
 
-        auto key_end = [](char c) { return c == ']'; };
+        auto key_end = [](char c)
+        { return c == ']'; };
 
-        auto key_part_handler = [&](const std::string &part) {
+        auto key_part_handler = [&](const std::string &part)
+        {
             if (part.empty())
                 throw_parse_exception("Empty component of table name");
 
@@ -327,7 +332,8 @@ private:
         if (!inserted)
         {
             auto is_value = [](const std::pair<const std::string &,
-                                               const std::shared_ptr<node> &> &p) {
+                                               const std::shared_ptr<node> &> &p)
+            {
                 return p.second->is_value();
             };
 
@@ -354,10 +360,12 @@ private:
         if (it == end || *it == ']')
             throw_parse_exception("Table array name cannot be empty");
 
-        auto key_end = [](char c) { return c == ']'; };
+        auto key_end = [](char c)
+        { return c == ']'; };
 
         std::string full_ta_name;
-        auto key_part_handler = [&](const std::string &part) {
+        auto key_part_handler = [&](const std::string &part)
+        {
             if (part.empty())
                 throw_parse_exception("Empty component of table array name");
 
@@ -427,9 +435,8 @@ private:
         key_part_handler(parse_key(it, end, key_end, key_part_handler));
 
         // consume the last "]]"
-        auto eat = consumer(it, end, [&]() {
-            throw_parse_exception("Unterminated table array name");
-        });
+        auto eat = consumer(it, end, [&]()
+                            { throw_parse_exception("Unterminated table array name"); });
         eat(']');
         eat(']');
 
@@ -440,9 +447,11 @@ private:
     void parse_key_value(std::string::iterator &it, std::string::iterator &end,
                          table *curr_table)
     {
-        auto key_end = [](char c) { return c == '='; };
+        auto key_end = [](char c)
+        { return c == '='; };
 
-        auto key_part_handler = [&](const std::string &part) {
+        auto key_part_handler = [&](const std::string &part)
+        {
             // two cases: this key part exists already, in which case it must
             // be a table, or it doesn't exist in which case we must create
             // an implicitly defined table
@@ -524,9 +533,8 @@ private:
         }
         else
         {
-            auto bke = std::find_if(it, end, [](char c) {
-                return c == '.' || c == '=' || c == ']';
-            });
+            auto bke = std::find_if(it, end, [](char c)
+                                    { return c == '.' || c == '=' || c == ']'; });
             return parse_bare_key(it, bke);
         }
     }
@@ -551,13 +559,15 @@ private:
         }
 
         if (std::find_if(it, key_end,
-                         [](char c) { return c == ' ' || c == '\t'; }) != key_end)
+                         [](char c)
+                         { return c == ' ' || c == '\t'; }) != key_end)
         {
             throw_parse_exception("Bare key " + key + " cannot contain whitespace");
         }
 
         if (std::find_if(it, key_end,
-                         [](char c) { return c == '[' || c == ']'; }) != key_end)
+                         [](char c)
+                         { return c == '[' || c == ']'; }) != key_end)
         {
             throw_parse_exception("Bare key " + key + " cannot contain '[' or ']'");
         }
@@ -603,7 +613,8 @@ private:
         else
         {
             auto val_end = std::find_if(
-                it, end, [](char c) { return c == ',' || c == ']' || c == '#'; });
+                it, end, [](char c)
+                { return c == ',' || c == ']' || c == '#'; });
 
             numeric_type type = determine_numeric_type(it, val_end);
 
@@ -708,13 +719,15 @@ private:
     {
         std::stringstream ss;
 
-        auto is_ws = [](char c) { return c == ' ' || c == '\t'; };
+        auto is_ws = [](char c)
+        { return c == ' ' || c == '\t'; };
 
         bool consuming = false;
         std::shared_ptr<value<std::string>> ret;
 
         auto handle_line = [&](std::string::iterator &local_it,
-                               std::string::iterator &local_end) {
+                               std::string::iterator &local_end)
+        {
             if (consuming)
             {
                 local_it = std::find_if_not(local_it, local_end, is_ws);
@@ -960,19 +973,22 @@ private:
         auto check_it = it;
         auto check_end = find_end_of_number(it, end);
 
-        auto eat_sign = [&]() {
+        auto eat_sign = [&]()
+        {
             if (check_it != end && (*check_it == '-' || *check_it == '+'))
                 ++check_it;
         };
 
-        auto check_no_leading_zero = [&]() {
+        auto check_no_leading_zero = [&]()
+        {
             if (check_it != end && *check_it == '0' && check_it + 1 != check_end && check_it[1] != '.')
             {
                 throw_parse_exception("Numbers may not have leading zeros");
             }
         };
 
-        auto eat_digits = [&](std::function<bool(char)> &&check_char) {
+        auto eat_digits = [&](std::function<bool(char)> &&check_char)
+        {
             auto beg = check_it;
             while (check_it != end && check_char(*check_it))
             {
@@ -989,15 +1005,15 @@ private:
                 throw_parse_exception("Malformed number 2");
         };
 
-        auto eat_hex = [&]() {
-            eat_digits([](char c) -> bool {
-                return std::isxdigit(static_cast<unsigned char>(c));
-            });
+        auto eat_hex = [&]()
+        {
+            eat_digits([](char c) -> bool
+                       { return std::isxdigit(static_cast<unsigned char>(c)); });
         };
-        auto eat_decimal = [&]() {
-            eat_digits([](char c) -> bool {
-                return std::isdigit(static_cast<unsigned char>(c));
-            });
+        auto eat_decimal = [&]()
+        {
+            eat_digits([](char c) -> bool
+                       { return std::isdigit(static_cast<unsigned char>(c)); });
         };
 
         if (check_it != end && *check_it == '0' && check_it + 1 != check_end &&
@@ -1062,7 +1078,8 @@ private:
             if (check_it == end)
                 throw_parse_exception("Floats must have trailing digits");
 
-            auto eat_exp = [&]() {
+            auto eat_exp = [&]()
+            {
                 eat_sign();
                 check_no_leading_zero();
                 eat_decimal();
@@ -1135,9 +1152,8 @@ private:
     std::shared_ptr<value<bool>> parse_bool(std::string::iterator &it,
                                             const std::string::iterator &end)
     {
-        auto eat = consumer(it, end, [&]() {
-            throw_parse_exception("attempt to parse invalid boolean value");
-        });
+        auto eat = consumer(it, end, [&]()
+                            { throw_parse_exception("attempt to parse invalid boolean value"); });
 
         if (*it == 't')
         {
@@ -1161,12 +1177,11 @@ private:
     std::string::iterator find_end_of_array_element(std::string::iterator it,
                                                     std::string::iterator end)
     {
-        auto ret = std::find_if(it, end, [](char c) {
-            return !std::isdigit(static_cast<unsigned char>(c)) &&
-                   c != '_' && c != '.' && c != 'e' &&
-                   c != 'E' && c != '-' && c != '+' &&
-                   c != 'x' && c != 'o' && c != 'b';
-        });
+        auto ret = std::find_if(it, end, [](char c)
+                                { return !std::isdigit(static_cast<unsigned char>(c)) &&
+                                         c != '_' && c != '.' && c != 'e' &&
+                                         c != 'E' && c != '-' && c != '+' &&
+                                         c != 'x' && c != 'o' && c != 'b'; });
         if (ret != end && ret + 1 != end && ret + 2 != end)
         {
             if ((ret[0] == 'i' && ret[1] == 'n' && ret[2] == 'f') ||
@@ -1181,12 +1196,11 @@ private:
     std::string::iterator find_end_of_number(std::string::iterator it,
                                              std::string::iterator end)
     {
-        auto ret = std::find_if(it, end, [](char c) {
-            return !std::isdigit(static_cast<unsigned char>(c)) &&
-                   c != '_' && c != '.' && c != 'e' &&
-                   c != 'E' && c != '-' && c != '+' &&
-                   c != 'x' && c != 'o' && c != 'b';
-        });
+        auto ret = std::find_if(it, end, [](char c)
+                                { return !std::isdigit(static_cast<unsigned char>(c)) &&
+                                         c != '_' && c != '.' && c != 'e' &&
+                                         c != 'E' && c != '-' && c != '+' &&
+                                         c != 'x' && c != 'o' && c != 'b'; });
         if (ret != end && ret + 1 != end && ret + 2 != end)
         {
             if ((ret[0] == 'i' && ret[1] == 'n' && ret[2] == 'f') ||
@@ -1201,9 +1215,8 @@ private:
     std::string::iterator find_end_of_date(std::string::iterator it,
                                            std::string::iterator end)
     {
-        auto end_of_date = std::find_if(it, end, [](char c) {
-            return !std::isdigit(static_cast<unsigned char>(c)) && c != '-';
-        });
+        auto end_of_date = std::find_if(it, end, [](char c)
+                                        { return !std::isdigit(static_cast<unsigned char>(c)) && c != '-'; });
 
         if (end_of_date != end && *end_of_date == ' ' && end_of_date + 1 != end &&
             std::isdigit(static_cast<unsigned char>(end_of_date[1])))
@@ -1211,19 +1224,17 @@ private:
             end_of_date++;
         }
 
-        return std::find_if(end_of_date, end, [](char c) {
-            return !std::isdigit(static_cast<unsigned char>(c)) &&
-                   c != 'T' && c != 'Z' && c != ':' &&
-                   c != '-' && c != '+' && c != '.';
-        });
+        return std::find_if(end_of_date, end, [](char c)
+                            { return !std::isdigit(static_cast<unsigned char>(c)) &&
+                                     c != 'T' && c != 'Z' && c != ':' &&
+                                     c != '-' && c != '+' && c != '.'; });
     }
 
     std::string::iterator find_end_of_time(std::string::iterator it,
                                            std::string::iterator end)
     {
-        return std::find_if(it, end, [](char c) {
-            return !std::isdigit(static_cast<unsigned char>(c)) && c != ':' && c != '.';
-        });
+        return std::find_if(it, end, [](char c)
+                            { return !std::isdigit(static_cast<unsigned char>(c)) && c != ':' && c != '.'; });
     }
 
     local_time read_time(std::string::iterator &it,
@@ -1231,9 +1242,8 @@ private:
     {
         auto time_end = find_end_of_time(it, end);
 
-        auto eat = consumer(it, time_end, [&]() {
-            throw_parse_exception("Malformed time");
-        });
+        auto eat = consumer(it, time_end, [&]()
+                            { throw_parse_exception("Malformed time"); });
 
         local_time ltime;
 
@@ -1271,9 +1281,8 @@ private:
     {
         auto date_end = find_end_of_date(it, end);
 
-        auto eat = consumer(it, date_end, [&]() {
-            throw_parse_exception("Malformed date");
-        });
+        auto eat = consumer(it, date_end, [&]()
+                            { throw_parse_exception("Malformed date"); });
 
         local_date ldate;
         ldate.year = eat.eat_digits(4);
