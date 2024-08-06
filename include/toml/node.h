@@ -19,7 +19,7 @@ public:
 
     virtual ~node() noexcept = default;
 
-    node_view view() const noexcept;
+    inline node_view view() const noexcept;
 
     virtual base_type type() const noexcept
     {
