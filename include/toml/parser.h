@@ -1478,7 +1478,7 @@ private:
     std::size_t line_number_ = 0;
 };
 
-parse_result parse_file(const std::string &file_path)
+inline parse_result parse_file(const std::string &file_path)
 {
     std::ifstream file{file_path};
 
@@ -1500,7 +1500,7 @@ parse_result parse_file(const std::string &file_path)
     }
 }
 
-parse_result parse(const std::string &source)
+inline parse_result parse(const std::string &source)
 {
     try
     {
